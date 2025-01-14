@@ -1,0 +1,30 @@
+<resources>
+    <string name="default_web_client_id" translatable="false">491604704118-bs3kfagaaukihglsqmhp591eff3rk29i.apps.googleusercontent.com</string>
+    <string name="app_name">Monforte_DanielIMDbAPP</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title" translatable="false">Android Studio</string>
+    <string name="nav_header_subtitle" translatable="false">android.studio@android.com</string>
+    <string name="logout_button">LOGOUT</string>
+    <string name="nav_header_desc">Navigation header</string>
+    <string name="action_settings">Settings</string>
+    <string name="action_credits">Credits</string>
+
+    <string name="menu_top10">Top 10</string>
+    <string name="menu_favoritas">Favoritas</string>
+    <string name="menu_slideshow">Buscar Película</string>
+
+    <string name="enviar_por_sms">ENVIAR POR SMS</string>
+    <string name="compartir">COMPARTIR</string>
+    <string name="ingrese_año">Ingrese el año</string>
+    <string name="buscar">BUSCAR</string>
+    <string name="volver">VOLVER</string>
+    <string name="año_vacio">El año no puede estar vacío</string>
+    <string name="lista_favoritos_vacia">La lista de favoritos está vacía</string>
+    <string name="buscando_generos">Buscando géneros...</string>
+
+    <string name="error_solicitud_api">Error en la solicitud a la API</string>
+    <string name="error_respuesta_api">Error en la respuesta de la API</string>
+    <string name="error_inicio_sesion">Error en el inicio de sesión</string>
+    <string name="error_inicio_sesion_api">Error de la API al iniciar sesion</string>
+</resources>

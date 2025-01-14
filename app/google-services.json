@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "491604704118",
+    "project_id": "monfortedanielimdbapp",
+    "storage_bucket": "monfortedanielimdbapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:491604704118:android:0212a48e08178fa5065857",
+        "android_client_info": {
+          "package_name": "edu.pmdm.monforte_danielimdbapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBFBh7vgy1uVq3hLgEV7IVLRqIv5on5aaY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
