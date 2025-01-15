@@ -49,11 +49,11 @@ public class MovieResponse {
                     if(service!=null){
                         service.onMoviesReceived(movies); //Ejecutamos el metodo que procesa la lista de peliculas creada a partir de los datos del JSON
                     }
-                } else if(response.code()==429){
+                } /*else if(response.code()==429){
                     System.out.println("Limite de solicitudes alcanzado, cambiando la key");
                     IMDBApiClient.switchApiKey();
                     buscarTop10(service,context);
-                }
+                }*/
                 else { //Si la respuesta no ha sido exitosa (por ejemplo, porque la key no tiene usos)
                     if(context!=null) new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(context, R.string.error_respuesta_api, Toast.LENGTH_SHORT).show()); //Mostramos un Toast con informacion del error. Se usa Handler para que se haga en el hilo principal
                 }

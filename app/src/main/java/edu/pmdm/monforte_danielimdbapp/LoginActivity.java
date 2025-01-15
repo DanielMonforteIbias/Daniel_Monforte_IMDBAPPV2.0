@@ -44,6 +44,11 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if(checkLoginStatus()){
+            Intent intent=new Intent(this,MainActivity.class);
+            startActivity(intent);
+            finish();
+        }
         EdgeToEdge.enable(this);
         binding = ActivityLoginBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -103,5 +108,9 @@ public class LoginActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+    private boolean checkLoginStatus() {
+        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this); //Obtenemos la cuenta con sesión iniciada
+        return account != null; //Devuelve true si hay cuenta, es decir, si no es null, y false si es null
     }
 }
