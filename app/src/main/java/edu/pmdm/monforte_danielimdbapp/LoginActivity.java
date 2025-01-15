@@ -27,6 +27,7 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FacebookAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
@@ -44,6 +45,7 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        auth=FirebaseAuth.getInstance();
         if(checkLoginStatus()){
             Intent intent=new Intent(this,MainActivity.class);
             startActivity(intent);
@@ -57,7 +59,6 @@ public class LoginActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        auth=FirebaseAuth.getInstance();
         signInRequest= BeginSignInRequest.builder()
                 .setGoogleIdTokenRequestOptions(BeginSignInRequest.GoogleIdTokenRequestOptions.builder().setSupported(true)
                         // Your server's client ID, not your Android client ID.
@@ -108,9 +109,55 @@ public class LoginActivity extends AppCompatActivity {
                 }
             }
         });
+
+        // Initialize Facebook Login button
+        /*CallbackManager callbackManager = CallbackManager.Factory.create();
+        binding.btnFacebook.setReadPermissions("email", "public_profile");
+        binding.btnFacebook.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
+            @Override
+            public void onSuccess(LoginResult loginResult) {
+                System.out.println("facebook:onSuccess:" + loginResult);
+                handleFacebookAccessToken(loginResult.getAccessToken());
+            }
+
+            @Override
+            public void onCancel() {
+                System.out.println("facebook:onCancel");
+            }
+
+            @Override
+            public void onError(FacebookException error) {
+                System.out.println("facebook:onError"+error);
+            }
+        });*/
     }
+    /*private void handleFacebookAccessToken(AccessToken token) {
+        System.out.println("handleFacebookAccessToken:" + token);
+
+        AuthCredential credential = FacebookAuthProvider.getCredential(token.getToken());
+        auth.signInWithCredential(credential)
+                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        if (task.isSuccessful()) {
+                            // Sign in success, update UI with the signed-in user's information
+                            System.out.println("signInWithCredential:success");
+                            FirebaseUser user = auth.getCurrentUser();
+                            finish(); //Terminamos esta actividad
+                            Intent intent = new Intent(LoginActivity.this, MainActivity.class); //Creamos un Intent para ir a MainActivity
+                            startActivity(intent); //Iniciamos la actividad con el intent
+                        } else {
+                            // If sign in fails, display a message to the user.
+                            System.out.println("signInWithCredential:failure"+task.getException());
+                            Toast.makeText(getApplicationContext(), "Authentication failed.",Toast.LENGTH_SHORT).show();
+                        }
+                        // ...
+                    }
+                });
+    }*/
+
     private boolean checkLoginStatus() {
-        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this); //Obtenemos la cuenta con sesión iniciada
-        return account != null; //Devuelve true si hay cuenta, es decir, si no es null, y false si es null
+        FirebaseUser currentUser = auth.getCurrentUser(); //Obtenemos el usuario con sesión iniciada
+        return currentUser != null; //Devuelve true si hay cuenta, es decir, si no es null, y false si es null
     }
 }

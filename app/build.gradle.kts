@@ -1,3 +1,5 @@
+
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.google.gms.google.services)
@@ -48,12 +50,12 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
-    implementation (libs.gbutton)
-    implementation (libs.play.services.auth)
-    implementation (libs.glide)
-    annotationProcessor (libs.compiler)
-    implementation (libs.okhttp)
-    implementation (libs.gson)
-    implementation (libs.retrofit)
-    implementation (libs.converter.gson)
+    implementation(libs.gbutton)
+    implementation(libs.play.services.auth)
+    implementation(libs.glide)
+    annotationProcessor(libs.compiler)
+    implementation(libs.okhttp)
+    implementation(libs.gson)
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
 }
