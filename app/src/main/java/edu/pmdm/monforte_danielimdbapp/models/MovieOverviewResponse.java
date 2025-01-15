@@ -6,6 +6,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.util.List;
 
+import edu.pmdm.monforte_danielimdbapp.api.IMDBApiClient;
 import edu.pmdm.monforte_danielimdbapp.api.IMDBApiService;
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -20,14 +21,14 @@ public class MovieOverviewResponse {
      * @param service la interfaz que tiene el metodo a ejecutar al obtener la descripcion
      */
     public static void obtenerDescripcion(String id, IMDBApiService service){
+        String apiKey= IMDBApiClient.getApiKey();
         OkHttpClient client = new OkHttpClient();
         Request request = new Request.Builder()
                 .url("https://imdb-com.p.rapidapi.com/title/get-overview?tconst="+id)
                 .get()
-                .addHeader("x-rapidapi-key", "8bd8c55e73msh0e1794c9dba568cp141c78jsnd5d9db2ae48a")
+                .addHeader("x-rapidapi-key", apiKey)
                 .addHeader("x-rapidapi-host", "imdb-com.p.rapidapi.com")
                 .build();
-        //Si se necesita cambiar la key, ir a MovieResponse para ver algunas disponibles
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
@@ -47,7 +48,12 @@ public class MovieOverviewResponse {
                     } catch (JSONException e) {
                         throw new RuntimeException(e);
                     }
-                } else {
+                } else if(response.code()==429){
+                    System.out.println("Limite de solicitudes alcanzado, cambiando la key");
+                    IMDBApiClient.switchApiKey();
+                    obtenerDescripcion(id, service);
+                }
+                else {
                     if(service!=null){
                         service.onDescriptionReceived("(No description found)");
                     }

@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.List;
 
 import edu.pmdm.monforte_danielimdbapp.R;
+import edu.pmdm.monforte_danielimdbapp.api.IMDBApiClient;
 import edu.pmdm.monforte_danielimdbapp.api.IMDBApiService;
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -23,20 +24,16 @@ public class MovieResponse {
      * @param context el contexto desde donde se llamó, por si hay que mostrar un Toast
      */
     public static void buscarTop10(IMDBApiService service, Context context){
+
+        String apiKey= IMDBApiClient.getApiKey();
         OkHttpClient client = new OkHttpClient();
         //La peticion tiene la condicion limit=10 para obtener el top 10, se podria cambiar este numero para obtener mas o menos. Tambien podemos cambiar ALL para obtener solo series o solo peliculas
         Request request = new Request.Builder()
                 .url("https://imdb-com.p.rapidapi.com/title/get-top-meter?topMeterTitlesType=ALL&limit=10")
                 .get()
-                .addHeader("x-rapidapi-key", "8bd8c55e73msh0e1794c9dba568cp141c78jsnd5d9db2ae48a")
+                .addHeader("x-rapidapi-key", apiKey)
                 .addHeader("x-rapidapi-host", "imdb-com.p.rapidapi.com")
                 .build();
-        /*Otras keys por si la actual se queda sin usos:
-        f94b3a9b75mshf98573499366620p15aecejsndd002043f0ce (llamadas agotadas)
-        db11b4b2d1mshf70e3a1da81bda4p1d070djsna023899c32b8
-        8bd8c55e73msh0e1794c9dba568cp141c78jsnd5d9db2ae48a (usada actualmente)
-        Asegurarse de cambiar las keys aqui Y en MovieOverviewResponse
-        */
         //No usamos execute porque no se puede ejecutar en el hilo principal
         client.newCall(request).enqueue(new Callback() {
             @Override
@@ -52,7 +49,12 @@ public class MovieResponse {
                     if(service!=null){
                         service.onMoviesReceived(movies); //Ejecutamos el metodo que procesa la lista de peliculas creada a partir de los datos del JSON
                     }
-                } else { //Si la respuesta no ha sido exitosa (por ejemplo, porque la key no tiene usos)
+                } else if(response.code()==429){
+                    System.out.println("Limite de solicitudes alcanzado, cambiando la key");
+                    IMDBApiClient.switchApiKey();
+                    buscarTop10(service,context);
+                }
+                else { //Si la respuesta no ha sido exitosa (por ejemplo, porque la key no tiene usos)
                     if(context!=null) new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(context, R.string.error_respuesta_api, Toast.LENGTH_SHORT).show()); //Mostramos un Toast con informacion del error. Se usa Handler para que se haga en el hilo principal
                 }
             }
