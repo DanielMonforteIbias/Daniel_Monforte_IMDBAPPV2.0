@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.List;
 
@@ -91,7 +92,7 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder>{
         holder.portada.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                String userId=GoogleSignIn.getLastSignedInAccount(context).getId(); //Obtenemos el id de la cuenta de Google
+                String userId= FirebaseAuth.getInstance().getCurrentUser().getUid(); //Obtenemos el id de la cuenta de Google
                 if(!dbHelper.movieExists(pelicula.getId()))dbHelper.addMovie(pelicula); //Si la pelicula no existe en la base de datos, la añadimos
                 if(dbHelper.movieIsFavorite(userId, pelicula.getId())){ //Si la pelicula ya es favorita del usuario
                     if(fragment instanceof FavoritesFragment){ //Si estamos en el fragmento de Favoritas

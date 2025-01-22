@@ -48,11 +48,11 @@ public class MovieOverviewResponse {
                     } catch (JSONException e) {
                         throw new RuntimeException(e);
                     }
-                } /*else if(response.code()==429){
+                } else if(response.code()==429){
                     System.out.println("Limite de solicitudes alcanzado, cambiando la key");
                     IMDBApiClient.switchApiKey();
                     obtenerDescripcion(id, service);
-                }*/
+                }
                 else {
                     if(service!=null){
                         service.onDescriptionReceived("(No description found)");

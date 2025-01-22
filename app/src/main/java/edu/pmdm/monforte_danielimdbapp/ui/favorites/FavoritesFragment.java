@@ -22,6 +22,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,7 +52,7 @@ public class FavoritesFragment extends Fragment {
         dbHelper=new FavoritesDatabaseHelper(getContext()); //Inicializamos la variable de la base de datos con el contexto
         RecyclerView recyclerView = binding.recyclerViewFavoritas; //Obtenemos el RecyclerView
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));//Le damos un LayoutManager lineal, tendrá solo 1 columna
-        favoriteMovies=dbHelper.getUserFavorites(GoogleSignIn.getLastSignedInAccount(getContext()).getId());//Obtenemos la lista de peliculas con el metodo de FavoritesDatabaseHelper, pasando el id del usuario que hay logueado
+        favoriteMovies=dbHelper.getUserFavorites(FirebaseAuth.getInstance().getCurrentUser().getUid());//Obtenemos la lista de peliculas con el metodo de FavoritesDatabaseHelper, pasando el id del usuario que hay logueado
         adaptador=new MovieAdapter(favoriteMovies,this); //Creamos el adaptador con la lista de peliculas y pasamos el fragmento tambien
         recyclerView.setAdapter(adaptador); //Ponemos el adaptador al RecyclerView
         //OnClick del botón de compartir

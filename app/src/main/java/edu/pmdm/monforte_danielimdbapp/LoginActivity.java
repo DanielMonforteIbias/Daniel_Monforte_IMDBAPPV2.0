@@ -16,6 +16,12 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.facebook.AccessToken;
+import com.facebook.CallbackManager;
+import com.facebook.FacebookCallback;
+import com.facebook.FacebookException;
+import com.facebook.FacebookSdk;
+import com.facebook.login.LoginResult;
 import com.google.android.gms.auth.api.identity.BeginSignInRequest;
 import com.google.android.gms.auth.api.identity.SignInCredential;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -109,9 +115,9 @@ public class LoginActivity extends AppCompatActivity {
                 }
             }
         });
-
+        FacebookSdk.sdkInitialize(this);
         // Initialize Facebook Login button
-        /*CallbackManager callbackManager = CallbackManager.Factory.create();
+        CallbackManager callbackManager = CallbackManager.Factory.create();
         binding.btnFacebook.setReadPermissions("email", "public_profile");
         binding.btnFacebook.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
             @Override
@@ -119,21 +125,18 @@ public class LoginActivity extends AppCompatActivity {
                 System.out.println("facebook:onSuccess:" + loginResult);
                 handleFacebookAccessToken(loginResult.getAccessToken());
             }
-
             @Override
             public void onCancel() {
                 System.out.println("facebook:onCancel");
             }
-
             @Override
             public void onError(FacebookException error) {
                 System.out.println("facebook:onError"+error);
             }
-        });*/
+        });
     }
-    /*private void handleFacebookAccessToken(AccessToken token) {
+    private void handleFacebookAccessToken(AccessToken token) {
         System.out.println("handleFacebookAccessToken:" + token);
-
         AuthCredential credential = FacebookAuthProvider.getCredential(token.getToken());
         auth.signInWithCredential(credential)
                 .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
@@ -154,7 +157,7 @@ public class LoginActivity extends AppCompatActivity {
                         // ...
                     }
                 });
-    }*/
+    }
 
     private boolean checkLoginStatus() {
         FirebaseUser currentUser = auth.getCurrentUser(); //Obtenemos el usuario con sesión iniciada

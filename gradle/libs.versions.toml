@@ -2,6 +2,7 @@
 agp = "8.6.0"
 converterGson = "2.5.0"
 facebookAndroidSdk = "[5,6)"
+facebookLogin = "latest.release"
 gbutton = "v1.0.19"
 glide = "4.15.1"
 gson = "2.11.0"
@@ -26,6 +27,7 @@ retrofit = "2.9.0"
 compiler = { module = "com.github.bumptech.glide:compiler", version.ref = "glide" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
 facebook-android-sdk = { module = "com.facebook.android:facebook-android-sdk", version.ref = "facebookAndroidSdk" }
+facebook-login = { module = "com.facebook.android:facebook-login", version.ref = "facebookLogin" }
 gbutton = { module = "com.github.TutorialsAndroid:GButton", version.ref = "gbutton" }
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }

@@ -1,5 +1,11 @@
 <resources>
     <string name="default_web_client_id" translatable="false">491604704118-bs3kfagaaukihglsqmhp591eff3rk29i.apps.googleusercontent.com</string>
+
+    <string name="facebook_app_id">1753658615429423</string>
+    <string name="fb_login_protocol_scheme">fb1753658615429423</string>
+    <string name="facebook_client_token">56789</string>
+
+
     <string name="app_name">Monforte_DanielIMDbAPP</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>

@@ -11,8 +11,12 @@ import android.view.Menu;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.facebook.AccessToken;
+import com.facebook.GraphRequest;
+import com.facebook.login.LoginManager;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -22,6 +26,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.UserInfo;
 
 import androidx.annotation.NonNull;
 import androidx.navigation.NavController;
@@ -42,6 +47,9 @@ public class MainActivity extends AppCompatActivity {
     private TextView txtNombre;
     private TextView txtEmail;
     private Button btnLogout;
+
+    private FirebaseUser user;
+    String providerId;
 
     private GoogleSignInClient gClient;
     private GoogleSignInOptions gOptions;
@@ -68,29 +76,66 @@ public class MainActivity extends AppCompatActivity {
         txtEmail=headerView.findViewById(R.id.txtEmail);
         btnLogout=headerView.findViewById(R.id.btnLogout);
         imgFoto=headerView.findViewById(R.id.imgViewFoto);
+        user = FirebaseAuth.getInstance().getCurrentUser();
+        providerId = user.getProviderData().get(1).getProviderId();
+        if (providerId.equals("google.com")) {
+            gOptions=new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).requestEmail().build();
+            gClient= GoogleSignIn.getClient(this,gOptions);
+            //Obtenemos los datos de la cuenta
+            String gName=user.getDisplayName(); //Nombre de la cuenta
+            String gEmail=user.getEmail(); //Correo de la cuenta
+            Uri gPhoto= user.getPhotoUrl(); //Uri para la foto de la cuenta
+            txtNombre.setText(gName); //Ponemos el nombre en el TextView para el nombre
+            txtEmail.setText(gEmail); //Ponemos el correo de la cuenta en el TextView del correo
+            Glide.with(this).load(gPhoto).placeholder(R.drawable.usuario).into(imgFoto); //Usamos Glide para poner la foto del usuario en el ImageView. Si ocurriese algun problema y fuese null, se pondría la foto del placeholder
+        } else if (providerId.equals("facebook.com")) {
+            AccessToken accessToken = AccessToken.getCurrentAccessToken();
+            if (accessToken != null) {
+                txtNombre.setText(user.getDisplayName());
+                txtEmail.setText("Conectado con Facebook");
+                //Obtenemos la foto
+                GraphRequest request = GraphRequest.newMeRequest(accessToken, (object, response) -> {
+                    try {
+                        String photoUrl = object.getJSONObject("picture").getJSONObject("data").getString("url");
+                        System.out.println("Foto de perfil: " + photoUrl);
+                        Glide.with(this).load(photoUrl).placeholder(R.drawable.usuario).into(imgFoto);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
+                Bundle parameters = new Bundle();
+                parameters.putString("fields", "id,name,picture.type(large)");
+                request.setParameters(parameters);
+                request.executeAsync();
+            }
+        }
 
-        gOptions=new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).requestEmail().build();
-        gClient= GoogleSignIn.getClient(this,gOptions);
-        GoogleSignInAccount gAccount=GoogleSignIn.getLastSignedInAccount(this); //Obtenemos la cuenta que ha iniciado sesion
-        //Obtenemos los datos de la cuenta
-        String gName=gAccount.getDisplayName(); //Nombre de la cuenta
-        String gEmail=gAccount.getEmail(); //Correo de la cuenta
-        Uri gPhoto= gAccount.getPhotoUrl(); //Uri para la foto de la cuenta
-        txtNombre.setText(gName); //Ponemos el nombre en el TextView para el nombre
-        txtEmail.setText(gEmail); //Ponemos el correo de la cuenta en el TextView del correo
-        Glide.with(this).load(gPhoto).placeholder(R.drawable.usuario).into(imgFoto); //Usamos Glide para poner la foto del usuario en el ImageView. Si ocurriese algun problema y fuese null, se pondría la foto del placeholder
         //OnClick del botón para cerrar sesión
         btnLogout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                gClient.signOut().addOnCompleteListener(new OnCompleteListener<Void>() { //Cerramos sesión y añadimos el listener OnComplete
-                    @Override
-                    public void onComplete(@NonNull Task<Void> task) { //Cuando se complete la tarea de cerrar sesión
-                        FirebaseAuth.getInstance().signOut();
-                        finish(); //Terminamos esta actividad
-                        startActivity(new Intent(MainActivity.this, LoginActivity.class)); //Abrimos la actividad de LoginActivity
-                    }
-                });
+                FirebaseAuth.getInstance().signOut();
+                switch(providerId){
+                    case "google.com":
+                        gClient.signOut().addOnCompleteListener(new OnCompleteListener<Void>() { //Cerramos sesión y añadimos el listener OnComplete
+                            @Override
+                            public void onComplete(@NonNull Task<Void> task) { //Cuando se complete la tarea de cerrar sesión
+                                System.out.println("Cerraste sesión de Google");
+                            }
+                        });
+                        break;
+                    case "facebook.com":
+                        if (AccessToken.getCurrentAccessToken() != null) {
+                            LoginManager.getInstance().logOut();
+                            System.out.println("Cerraste sesión de Facebook");
+                        }
+                        break;
+                    default:
+                        Toast.makeText(getApplicationContext(),"Error en el ID del proveedor al cerrar sesion",Toast.LENGTH_SHORT).show();
+                        break;
+                }
+                finish(); //Terminamos esta actividad
+                startActivity(new Intent(MainActivity.this, LoginActivity.class)); //Abrimos la actividad de LoginActivity
             }
         });
     }
