@@ -80,7 +80,7 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder>{
 
                     @Override
                     public void onDescriptionReceived(String descripcion) { //Al recibir la descripcion
-                        pelicula.setDescripcion(descripcion); //Le damos a la pelicula pulsada la descripcion que hemos obtenido de la API
+                        if(pelicula.getId().startsWith("tt"))pelicula.setDescripcion(descripcion); //Le damos a la pelicula pulsada la descripcion que hemos obtenido de la API (si viene de IMDB, es decir, si su id empieza por tt)
                         Intent intent=new Intent(holder.itemView.getContext(), MovieDetailsActivity.class); //Creamos un Intent de la actividad de detalles
                         intent.putExtra("Movie",pelicula); //Pasamos la pelicula en el intent, ya que es Parcelable
                         context.startActivity(intent); //Iniciamos la actividad de detalles

@@ -83,7 +83,8 @@ public class JSONExtractor {
                 String movieImage="https://image.tmdb.org/t/p/w500"+movieJson.getString("poster_path"); //La API solo da la ruta relativa, asi que lo concatenamos con el resto de la URL para que sea correcta
                 String movieReleaseDate=movieJson.getString("release_date");
                 double movieRating=movieJson.getDouble("vote_average");
-                moviesList.add(new Movie(movieId,movieTitle,movieImage,movieReleaseDate,movieRating)); //Creamos un objeto movie con los datos leidos y lo añadimos a la lista
+                String movieOverview=movieJson.getString("overview");
+                moviesList.add(new Movie(movieId,movieTitle,movieImage,movieReleaseDate,movieRating,movieOverview)); //Creamos un objeto movie con los datos leidos y lo añadimos a la lista
             }
         } catch (Exception e) {
             e.printStackTrace();
