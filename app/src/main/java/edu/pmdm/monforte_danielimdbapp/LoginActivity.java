@@ -40,6 +40,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 
 import edu.pmdm.monforte_danielimdbapp.databinding.ActivityLoginBinding;
+import edu.pmdm.monforte_danielimdbapp.sync.FavoritesSync;
 
 public class LoginActivity extends AppCompatActivity {
     private FirebaseAuth auth;
@@ -66,6 +67,11 @@ public class LoginActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        //Sincronizar con Firebase
+        FavoritesSync sync=new FavoritesSync(this);
+        sync.syncFavoritesToFirebase();
+
+
         signInRequest = BeginSignInRequest.builder()
                 .setGoogleIdTokenRequestOptions(BeginSignInRequest.GoogleIdTokenRequestOptions.builder().setSupported(true)
                         // Your server's client ID, not your Android client ID.

@@ -54,7 +54,7 @@ public class MovieResponse {
                     IMDBApiClient.switchApiKey(); //Cambiamos la key
                     buscarTop10(service,context); //Volvemos a llamar al metodo con los mismos parametros que recibió una vez cambiada la key
                 }
-                else { //Si la respuesta no ha sido exitosa (por ejemplo, porque la key no tiene usos)
+                else { //Si la respuesta no ha sido exitosa
                     if(context!=null) new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(context, R.string.error_respuesta_api, Toast.LENGTH_SHORT).show()); //Mostramos un Toast con informacion del error. Se usa Handler para que se haga en el hilo principal
                 }
             }

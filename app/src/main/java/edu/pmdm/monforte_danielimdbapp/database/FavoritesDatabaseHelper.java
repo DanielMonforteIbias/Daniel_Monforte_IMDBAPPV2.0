@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import edu.pmdm.monforte_danielimdbapp.models.Movie;
+import edu.pmdm.monforte_danielimdbapp.sync.FavoritesSync;
 
 public class FavoritesDatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME="favorites.db"; //Nombre de la base de datos
@@ -25,9 +26,11 @@ public class FavoritesDatabaseHelper extends SQLiteOpenHelper {
     private static int databaseVersion=4; //Version actual de la base de datos
 
     private ContentValues values; //Variable usada para el contenido de las inserciones
+    private Context context;
 
     public FavoritesDatabaseHelper(Context context) {
         super(context, DATABASE_NAME,null,databaseVersion); //Pasamos el nombre y la version
+        this.context=context;
         database=getWritableDatabase(); //Creamos o abrimos la base de datos para leer y escribir
     }
 
@@ -84,6 +87,7 @@ public class FavoritesDatabaseHelper extends SQLiteOpenHelper {
         values.put("userId", userId);
         values.put("movieId", movieId);
         database.insert(FAVORITES_TABLE_NAME,null,values); //Insertamos el registro en FAVORITES
+        new FavoritesSync(context).addFavoriteToFirebase(userId,movieId);
     }
 
     /**
@@ -95,6 +99,7 @@ public class FavoritesDatabaseHelper extends SQLiteOpenHelper {
         String condition = "userId = ? AND movieId = ?"; //Condicion para el borrado
         String conditionArgs[] = { userId, movieId }; //Ponemos los parámetros recibidos en los ? de la condicion anterior
         database.delete(FAVORITES_TABLE_NAME, condition,conditionArgs);
+        new FavoritesSync(context).deleteFavoriteFromFirebase(userId,movieId);
     }
 
     /*
@@ -173,5 +178,21 @@ public class FavoritesDatabaseHelper extends SQLiteOpenHelper {
         }
         cursor.close(); //Cerramos el cursor
         return favorites; //Devolvemos la lista
+    }
+
+    public List<String> getAllUsers(){
+        List<String>users=new ArrayList<String>();
+        Cursor cursor = database.rawQuery("SELECT DISTINCT userId FROM "+FAVORITES_TABLE_NAME,null);
+        while(cursor.moveToNext()){
+            users.add(cursor.getString(0));
+        }
+        return users;
+    }
+
+    public String getInsertionTimeFavoriteMovie(String userId, String movieId){
+        String insertionTime="";
+        Cursor cursor = database.rawQuery("SELECT insertionTime FROM "+FAVORITES_TABLE_NAME+" WHERE userId=? AND movieId=?",new String[]{userId,movieId});
+        if(cursor.moveToFirst()) insertionTime=cursor.getString(0);
+        return insertionTime;
     }
 }
