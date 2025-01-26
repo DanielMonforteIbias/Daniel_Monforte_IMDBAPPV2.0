@@ -14,23 +14,26 @@ import edu.pmdm.monforte_danielimdbapp.database.FavoritesDatabaseHelper;
 import edu.pmdm.monforte_danielimdbapp.models.Movie;
 
 public class FavoritesSync {
-    private FavoritesDatabaseHelper dbHelper;
-    FirebaseFirestore db;
+    private FavoritesDatabaseHelper dbHelper; //Necesitamos un objeto de esta clase para usar metodos de la base de datos local
+    private FirebaseFirestore db;
 
     public FavoritesSync(Context c){
-        db= FirebaseFirestore.getInstance();
-        dbHelper=new FavoritesDatabaseHelper(c);
+        db= FirebaseFirestore.getInstance(); //Inicializamos la variable para la base de datos de Firebase
+        dbHelper=new FavoritesDatabaseHelper(c); //Inicializamos tambien la variable para la base de datos local
     }
 
+    /**
+     * Método que sincroniza toda la base de datos de favoritos con la de Firebase
+     */
     public void syncFavoritesToFirebase(){
-        List<String> users= dbHelper.getAllUsers();
-        for (String user : users) {
-            DocumentReference userDocument = db.collection("favorites").document(user);
-            List<Movie> userFavorites = dbHelper.getUserFavorites(user);
-            CollectionReference moviesCollection = userDocument.collection("movies");
-            for (Movie movie : userFavorites) {
-                String insertionTime = dbHelper.getInsertionTimeFavoriteMovie(user, movie.getId());
-                Map<String, Object> movieMap = new HashMap<>();
+        List<String> users= dbHelper.getAllUsers(); //Obtenemos una lista de los IDs de los usuarios
+        for (String user : users) { //Recorremos la lista de usuarios
+            DocumentReference userDocument = db.collection("favorites").document(user); //La colección de favoritos tendrá un documento para cada usuario, con su id como nombre
+            List<Movie> userFavorites = dbHelper.getUserFavorites(user); //Obtenemos los favoritos de ese usuario
+            CollectionReference moviesCollection = userDocument.collection("movies"); //El documento del usuario tendra una coleccion de peliculas donde guardaremos sus favoritas
+            for (Movie movie : userFavorites) { //Recorremos las peliculas favoritas del usuario
+                String insertionTime = dbHelper.getInsertionTimeFavoriteMovie(user, movie.getId()); //Obtenemos la hora de insercion, que no es un atributo de la pelicula en sí
+                Map<String, Object> movieMap = new HashMap<>(); //Creamos un mapa para poner los datos
                 //Ponemos los datos de la pelicula en el map
                 movieMap.put("movieId", movie.getId());
                 movieMap.put("movieTitle", movie.getTitulo());
@@ -43,10 +46,16 @@ public class FavoritesSync {
             }
         }
     }
+
+    /**
+     * Este método sincroniza una película añadida a favoritos por un usuario para que se añada tambien en Firebase
+     * @param userId el id del usuario que añadio la pelicula a favoritos
+     * @param movieId el id de la película añadida a favoritos
+     */
     public void addFavoriteToFirebase(String userId, String movieId){
-        DocumentReference userDocument = db.collection("favorites").document(userId);
-        List<Movie> userFavorites = dbHelper.getUserFavorites(userId);
-        CollectionReference moviesCollection = userDocument.collection("movies");
+        DocumentReference userDocument = db.collection("favorites").document(userId); //Obtenemos el documento del usuario
+        List<Movie> userFavorites = dbHelper.getUserFavorites(userId); //Obtenemos los favoritos del usuario
+        CollectionReference moviesCollection = userDocument.collection("movies"); //Obtenemos la coleccion de peliculas favoritas del usuario
         for (Movie movie : userFavorites) {
             if(movie.getId().equals(movieId)){ //Sincronizamos solo la película añadida nueva
                 String insertionTime = dbHelper.getInsertionTimeFavoriteMovie(userId, movie.getId());
@@ -64,9 +73,14 @@ public class FavoritesSync {
         }
     }
 
+    /**
+     * Método que elimina una pelicula de favoritos de Firebase cuando se elimina localmente
+     * @param userId el id del usuario que elimino la pelicula de sus favoritos
+     * @param movieId el id de la pelicula eliminada de favoritos
+     */
     public void deleteFavoriteFromFirebase(String userId, String movieId){
-        DocumentReference userRef = db.collection("favorites").document(userId);
-        CollectionReference moviesRef = userRef.collection("movies");
-        moviesRef.document(movieId).delete();
+        DocumentReference userRef = db.collection("favorites").document(userId); //Obtenemos el documento del usuario
+        CollectionReference moviesRef = userRef.collection("movies"); //Obtenemos la coleccion de favoritas del usuario
+        moviesRef.document(movieId).delete(); //Eliminamos la pelicula con el id recibido de dicha coleccion
     }
 }

@@ -3,8 +3,8 @@ package edu.pmdm.monforte_danielimdbapp.api;
 import java.util.ArrayList;
 
 public class RapidApiKeyManager {
-    private ArrayList<String>apiKeys=new ArrayList<String>();
-    private int currentKeyIndex=0;
+    private ArrayList<String>apiKeys=new ArrayList<String>(); //Lista de keys
+    private int currentKeyIndex=0; //Indice que apuntara a la key que se vaya a usar de la lista
 
     public RapidApiKeyManager(){
         //Añadimos todas las keys que tenemos
