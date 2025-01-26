@@ -162,6 +162,9 @@ public class MainActivity extends AppCompatActivity {
         if(id==R.id.action_credits){ //Si el item pulsado es el de creditos
             mostrarCreditos(); //Mostramos el dialogo de creditos
         }
+        else if(id==R.id.action_edit_user){
+
+        }
         return super.onOptionsItemSelected(item);
     }
 
