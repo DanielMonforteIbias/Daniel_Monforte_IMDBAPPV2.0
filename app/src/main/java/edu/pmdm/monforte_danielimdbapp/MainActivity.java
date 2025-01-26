@@ -36,6 +36,7 @@ import androidx.navigation.ui.NavigationUI;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.appcompat.app.AppCompatActivity;
 
+import edu.pmdm.monforte_danielimdbapp.database.UsersDatabaseHelper;
 import edu.pmdm.monforte_danielimdbapp.databinding.ActivityMainBinding;
 
 public class MainActivity extends AppCompatActivity {
@@ -49,7 +50,8 @@ public class MainActivity extends AppCompatActivity {
     private Button btnLogout;
 
     private FirebaseUser user;
-    String providerId;
+    private UsersDatabaseHelper dbHelper;
+    private String providerId;
 
     private GoogleSignInClient gClient;
     private GoogleSignInOptions gOptions;
@@ -71,6 +73,9 @@ public class MainActivity extends AppCompatActivity {
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
+
+        dbHelper=new UsersDatabaseHelper(this);
+
         //Obtenemos algunos componentes del headerView para modificarlos
         txtNombre=headerView.findViewById(R.id.txtNombre);
         txtEmail=headerView.findViewById(R.id.txtEmail);
@@ -114,6 +119,7 @@ public class MainActivity extends AppCompatActivity {
         btnLogout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                dbHelper.updateUserLogoutTime(user.getUid(),System.currentTimeMillis());
                 FirebaseAuth.getInstance().signOut();
                 switch(providerId){ //Comprobamos el proveedor con el que habia sesion iniciada usando su id para cerrarla
                     case "google.com": //Si era Google

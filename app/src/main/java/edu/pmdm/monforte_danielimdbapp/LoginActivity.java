@@ -39,25 +39,32 @@ import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 
+import edu.pmdm.monforte_danielimdbapp.database.UsersDatabaseHelper;
 import edu.pmdm.monforte_danielimdbapp.databinding.ActivityLoginBinding;
 import edu.pmdm.monforte_danielimdbapp.sync.FavoritesSync;
 
 public class LoginActivity extends AppCompatActivity {
     private FirebaseAuth auth;
+    private FirebaseUser user;
+
     private BeginSignInRequest signInRequest;
     private GoogleSignInOptions gOptions;
     private GoogleSignInClient gClient;
     private ActivityLoginBinding binding;
     private ActivityResultLauncher<Intent> activityResultLauncher;
+    private UsersDatabaseHelper dbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         auth = FirebaseAuth.getInstance();
-        if (checkLoginStatus()) {
-            Intent intent = new Intent(this, MainActivity.class);
+        dbHelper=new UsersDatabaseHelper(this);
+        if (checkLoginStatus()) { //Si ya hay sesion iniciada
+            user=auth.getCurrentUser();
+            dbHelper.updateUserLoginTime(user.getUid(),System.currentTimeMillis()); //Actualizamos la hora de login del usuario a ahora
+            Intent intent = new Intent(this, MainActivity.class); //Abrimos un intent de MainActivity
             startActivity(intent);
-            finish();
+            finish(); //Cerramos esta actividad
         }
         EdgeToEdge.enable(this);
         binding = ActivityLoginBinding.inflate(getLayoutInflater());
@@ -107,7 +114,9 @@ public class LoginActivity extends AppCompatActivity {
                                         @Override
                                         public void onComplete(@NonNull Task<AuthResult> task) { //Al completar la tarea
                                             if (task.isSuccessful()) { //Si ha sido exitosa
-                                                FirebaseUser user = auth.getCurrentUser();
+                                                user = auth.getCurrentUser();
+                                                if(!dbHelper.userExists(user.getUid())) dbHelper.addUser(user); //Si el usuario no existe en la base de datos, lo añadimos
+                                                dbHelper.updateUserLoginTime(user.getUid(),System.currentTimeMillis()); //Actualizamos la hora de login del usuario a ahora
                                                 finish(); //Terminamos esta actividad
                                                 Intent intent = new Intent(LoginActivity.this, MainActivity.class); //Creamos un Intent para ir a MainActivity
                                                 startActivity(intent); //Iniciamos la actividad con el intent
@@ -155,7 +164,9 @@ public class LoginActivity extends AppCompatActivity {
                         if (task.isSuccessful()) {
                             // Sign in success, update UI with the signed-in user's information
                             System.out.println("signInWithCredential:success");
-                            FirebaseUser user = auth.getCurrentUser();
+                            user = auth.getCurrentUser();
+                            if(!dbHelper.userExists(user.getUid())) dbHelper.addUser(user); //Si el usuario no existe en la base de datos, lo añadimos
+                            dbHelper.updateUserLoginTime(user.getUid(),System.currentTimeMillis()); //Actualizamos la hora de login del usuario a ahora
                             finish(); //Terminamos esta actividad
                             Intent intent = new Intent(LoginActivity.this, MainActivity.class); //Creamos un Intent para ir a MainActivity
                             startActivity(intent); //Iniciamos la actividad con el intent

@@ -12,7 +12,52 @@
           "package_name": "edu.pmdm.monforte_danielimdbapp"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "491604704118-4607662to19jjt6te0b3lme11l9v7oc9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "edu.pmdm.monforte_danielimdbapp",
+            "certificate_hash": "9b9520e80159316d50433b873e78fa7f8af57ef6"
+          }
+        },
+        {
+          "client_id": "491604704118-fq71djf1gu8cvsvf3uatq1ulnn0cd09s.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "edu.pmdm.monforte_danielimdbapp",
+            "certificate_hash": "fef1450d765df2cf93288011f1fa298bf7050cb7"
+          }
+        },
+        {
+          "client_id": "491604704118-ivg6oag84b6f8tjpnaj5pur5l1jidhpj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "edu.pmdm.monforte_danielimdbapp",
+            "certificate_hash": "9b48e62bae8095c3750f0158425c2517bf803ac8"
+          }
+        },
+        {
+          "client_id": "491604704118-q5hrqdqc93rslt279fnm7tcrb57llq41.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "edu.pmdm.monforte_danielimdbapp",
+            "certificate_hash": "91525b20e16b508d9e9fa044357568f1aae56914"
+          }
+        },
+        {
+          "client_id": "491604704118-sl68335dchu9jnlui83g3u2q2548jth3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "edu.pmdm.monforte_danielimdbapp",
+            "certificate_hash": "6b2c04eeccd16924239f81898714db0bf4ad4f55"
+          }
+        },
+        {
+          "client_id": "491604704118-bs3kfagaaukihglsqmhp591eff3rk29i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBFBh7vgy1uVq3hLgEV7IVLRqIv5on5aaY"
@@ -20,7 +65,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "491604704118-bs3kfagaaukihglsqmhp591eff3rk29i.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
