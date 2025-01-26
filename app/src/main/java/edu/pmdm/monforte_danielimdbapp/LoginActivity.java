@@ -35,6 +35,7 @@ import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FacebookAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 
@@ -51,9 +52,9 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        auth=FirebaseAuth.getInstance();
-        if(checkLoginStatus()){
-            Intent intent=new Intent(this,MainActivity.class);
+        auth = FirebaseAuth.getInstance();
+        if (checkLoginStatus()) {
+            Intent intent = new Intent(this, MainActivity.class);
             startActivity(intent);
             finish();
         }
@@ -65,33 +66,33 @@ public class LoginActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        signInRequest= BeginSignInRequest.builder()
+        signInRequest = BeginSignInRequest.builder()
                 .setGoogleIdTokenRequestOptions(BeginSignInRequest.GoogleIdTokenRequestOptions.builder().setSupported(true)
                         // Your server's client ID, not your Android client ID.
                         .setServerClientId(getString(R.string.default_web_client_id))
                         // Only show accounts previously used to sign in.
                         .setFilterByAuthorizedAccounts(true).build()).build();
-        gOptions= new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).requestIdToken(getString(R.string.default_web_client_id)).requestEmail().build();
-        gClient= GoogleSignIn.getClient(this,gOptions);
+        gOptions = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).requestIdToken(getString(R.string.default_web_client_id)).requestEmail().build();
+        gClient = GoogleSignIn.getClient(this, gOptions);
         //OnClick del botón de Sign In With Google
         binding.btnGoogle.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent signInIntent=gClient.getSignInIntent(); //Creamos el intent para elegir cuenta de Google
+                Intent signInIntent = gClient.getSignInIntent(); //Creamos el intent para elegir cuenta de Google
                 activityResultLauncher.launch(signInIntent); //Lanzamos el intent
             }
         });
         //Launcher del intent de elegir cuenta de Google
-        activityResultLauncher=registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), new ActivityResultCallback<ActivityResult>() {
+        activityResultLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), new ActivityResultCallback<ActivityResult>() {
             @Override
             public void onActivityResult(ActivityResult result) { //Se ejecutará al obtener resultado del intent
-                if(result.getResultCode()== LoginActivity.RESULT_OK){
-                    Intent data=result.getData();
+                if (result.getResultCode() == LoginActivity.RESULT_OK) {
+                    Intent data = result.getData();
                     Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
-                    try{
-                        GoogleSignInAccount account=task.getResult(ApiException.class);
+                    try {
+                        GoogleSignInAccount account = task.getResult(ApiException.class);
                         String idToken = account.getIdToken();
-                        if (idToken !=  null) {
+                        if (idToken != null) {
                             // Got an ID token from Google. Use it to authenticate
                             // with Firebase.
                             AuthCredential firebaseCredential = GoogleAuthProvider.getCredential(idToken, null);
@@ -107,10 +108,10 @@ public class LoginActivity extends AppCompatActivity {
                                             }
                                         }
                                     });
-                        }
-                        else Toast.makeText(getApplicationContext(),R.string.error_inicio_sesion,Toast.LENGTH_SHORT).show(); //Si el id de la cuenta es nulo, mostramos un Toast con error de inicio de sesión
-                    }catch(ApiException e){
-                        Toast.makeText(getApplicationContext(),R.string.error_inicio_sesion_api,Toast.LENGTH_SHORT).show(); //Si hay una excepción de la API, mostramos un Toast con información del error
+                        } else
+                            Toast.makeText(getApplicationContext(), R.string.error_inicio_sesion, Toast.LENGTH_SHORT).show(); //Si el id de la cuenta es nulo, mostramos un Toast con error de inicio de sesión
+                    } catch (ApiException e) {
+                        Toast.makeText(getApplicationContext(), R.string.error_inicio_sesion_api, Toast.LENGTH_SHORT).show(); //Si hay una excepción de la API, mostramos un Toast con información del error
                     }
                 }
             }
@@ -125,16 +126,19 @@ public class LoginActivity extends AppCompatActivity {
                 System.out.println("facebook:onSuccess:" + loginResult);
                 handleFacebookAccessToken(loginResult.getAccessToken());
             }
+
             @Override
             public void onCancel() {
                 System.out.println("facebook:onCancel");
             }
+
             @Override
             public void onError(FacebookException error) {
-                System.out.println("facebook:onError"+error);
+                System.out.println("facebook:onError" + error);
             }
         });
     }
+
     private void handleFacebookAccessToken(AccessToken token) {
         System.out.println("handleFacebookAccessToken:" + token);
         AuthCredential credential = FacebookAuthProvider.getCredential(token.getToken());
@@ -151,8 +155,11 @@ public class LoginActivity extends AppCompatActivity {
                             startActivity(intent); //Iniciamos la actividad con el intent
                         } else {
                             // If sign in fails, display a message to the user.
-                            System.out.println("signInWithCredential:failure"+task.getException());
-                            Toast.makeText(getApplicationContext(), "Authentication failed.",Toast.LENGTH_SHORT).show();
+                            System.out.println("signInWithCredential:failure" + task.getException());
+                            if (task.getException() instanceof FirebaseAuthUserCollisionException) {
+                                Toast.makeText(getApplicationContext(), "Este correo ya se ha usado con otro proveedor", Toast.LENGTH_SHORT).show();
+                            }
+                            else Toast.makeText(getApplicationContext(), "Authentication failed.", Toast.LENGTH_SHORT).show();
                         }
                         // ...
                     }

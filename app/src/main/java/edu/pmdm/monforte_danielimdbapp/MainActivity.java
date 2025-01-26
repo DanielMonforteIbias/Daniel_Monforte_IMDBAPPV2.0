@@ -78,7 +78,8 @@ public class MainActivity extends AppCompatActivity {
         imgFoto=headerView.findViewById(R.id.imgViewFoto);
         user = FirebaseAuth.getInstance().getCurrentUser();
         providerId = user.getProviderData().get(1).getProviderId();
-        if (providerId.equals("google.com")) {
+        //Dependiendo del proveedor obtendremos los datos de una u otra forma
+        if (providerId.equals("google.com")) { //Si el proveedor es Google
             gOptions=new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).requestEmail().build();
             gClient= GoogleSignIn.getClient(this,gOptions);
             //Obtenemos los datos de la cuenta
@@ -88,17 +89,16 @@ public class MainActivity extends AppCompatActivity {
             txtNombre.setText(gName); //Ponemos el nombre en el TextView para el nombre
             txtEmail.setText(gEmail); //Ponemos el correo de la cuenta en el TextView del correo
             Glide.with(this).load(gPhoto).placeholder(R.drawable.usuario).into(imgFoto); //Usamos Glide para poner la foto del usuario en el ImageView. Si ocurriese algun problema y fuese null, se pondría la foto del placeholder
-        } else if (providerId.equals("facebook.com")) {
+        } else if (providerId.equals("facebook.com")) { //Si el proveedor es Facebook
             AccessToken accessToken = AccessToken.getCurrentAccessToken();
             if (accessToken != null) {
                 txtNombre.setText(user.getDisplayName());
-                txtEmail.setText("Conectado con Facebook");
-                //Obtenemos la foto
+                txtEmail.setText("Conectado con Facebook"); //En vez de un correo ponemos "Conectado con Facebook"
+                //Obtenemos la foto haciendo una request y navegando por el JSON obtenido hasta la URL de la foto
                 GraphRequest request = GraphRequest.newMeRequest(accessToken, (object, response) -> {
                     try {
                         String photoUrl = object.getJSONObject("picture").getJSONObject("data").getString("url");
-                        System.out.println("Foto de perfil: " + photoUrl);
-                        Glide.with(this).load(photoUrl).placeholder(R.drawable.usuario).into(imgFoto);
+                        Glide.with(this).load(photoUrl).placeholder(R.drawable.usuario).into(imgFoto); //Una vez tenemos la URL, la ponemos en el ImageView con Glide
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -115,8 +115,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 FirebaseAuth.getInstance().signOut();
-                switch(providerId){
-                    case "google.com":
+                switch(providerId){ //Comprobamos el proveedor con el que habia sesion iniciada usando su id para cerrarla
+                    case "google.com": //Si era Google
                         gClient.signOut().addOnCompleteListener(new OnCompleteListener<Void>() { //Cerramos sesión y añadimos el listener OnComplete
                             @Override
                             public void onComplete(@NonNull Task<Void> task) { //Cuando se complete la tarea de cerrar sesión
@@ -124,7 +124,7 @@ public class MainActivity extends AppCompatActivity {
                             }
                         });
                         break;
-                    case "facebook.com":
+                    case "facebook.com": //Si era Facebook
                         if (AccessToken.getCurrentAccessToken() != null) {
                             LoginManager.getInstance().logOut();
                             System.out.println("Cerraste sesión de Facebook");

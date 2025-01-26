@@ -21,7 +21,7 @@ public class MovieOverviewResponse {
      * @param service la interfaz que tiene el metodo a ejecutar al obtener la descripcion
      */
     public static void obtenerDescripcion(String id, IMDBApiService service){
-        String apiKey= IMDBApiClient.getApiKey();
+        String apiKey= IMDBApiClient.getApiKey(); //Obtenemos una key que usaremos en la request
         OkHttpClient client = new OkHttpClient();
         Request request = new Request.Builder()
                 .url("https://imdb-com.p.rapidapi.com/title/get-overview?tconst="+id)
@@ -48,10 +48,10 @@ public class MovieOverviewResponse {
                     } catch (JSONException e) {
                         throw new RuntimeException(e);
                     }
-                } else if(response.code()==429){
+                } else if(response.code()==429){ //429 es el codigo de error cuando una API no tiene calls
                     System.out.println("Limite de solicitudes alcanzado, cambiando la key");
-                    IMDBApiClient.switchApiKey();
-                    obtenerDescripcion(id, service);
+                    IMDBApiClient.switchApiKey(); //Cambiamos la key
+                    obtenerDescripcion(id, service); //Volvemos a llamar al metodo con los mismos parametros que recibió una vez cambiada la key
                 }
                 else {
                     if(service!=null){
