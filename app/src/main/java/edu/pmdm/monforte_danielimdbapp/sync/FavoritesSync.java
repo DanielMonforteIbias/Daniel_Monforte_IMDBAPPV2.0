@@ -48,6 +48,13 @@ public class FavoritesSync {
     }
 
     /**
+     * Método que sincroniza toda la base de datos de favoritos de Firebase con la local
+     */
+    public void syncFavoritesFromFirebase(){
+
+    }
+
+    /**
      * Este método sincroniza una película añadida a favoritos por un usuario para que se añada tambien en Firebase
      * @param userId el id del usuario que añadio la pelicula a favoritos
      * @param movieId el id de la película añadida a favoritos

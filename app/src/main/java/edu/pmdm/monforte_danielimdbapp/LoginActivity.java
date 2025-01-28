@@ -2,6 +2,7 @@ package edu.pmdm.monforte_danielimdbapp;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Patterns;
 import android.view.View;
 import android.widget.Toast;
 
@@ -35,6 +36,7 @@ import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FacebookAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
 import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
@@ -74,11 +76,11 @@ public class LoginActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        //Sincronizar con Firebase
+
         FavoritesSync sync=new FavoritesSync(this);
         sync.syncFavoritesToFirebase();
 
-
+        //Sincronizar con Firebase
         signInRequest = BeginSignInRequest.builder()
                 .setGoogleIdTokenRequestOptions(BeginSignInRequest.GoogleIdTokenRequestOptions.builder().setSupported(true)
                         // Your server's client ID, not your Android client ID.
@@ -114,12 +116,7 @@ public class LoginActivity extends AppCompatActivity {
                                         @Override
                                         public void onComplete(@NonNull Task<AuthResult> task) { //Al completar la tarea
                                             if (task.isSuccessful()) { //Si ha sido exitosa
-                                                user = auth.getCurrentUser();
-                                                if(!dbHelper.userExists(user.getUid())) dbHelper.addUser(user); //Si el usuario no existe en la base de datos, lo añadimos
-                                                dbHelper.updateUserLoginTime(user.getUid(),System.currentTimeMillis()); //Actualizamos la hora de login del usuario a ahora
-                                                finish(); //Terminamos esta actividad
-                                                Intent intent = new Intent(LoginActivity.this, MainActivity.class); //Creamos un Intent para ir a MainActivity
-                                                startActivity(intent); //Iniciamos la actividad con el intent
+                                                iniciarSesion();
                                             }
                                         }
                                     });
@@ -152,6 +149,94 @@ public class LoginActivity extends AppCompatActivity {
                 System.out.println("facebook:onError" + error);
             }
         });
+
+        //Registro o Login con email y contraseña
+        //Registrarse
+        binding.btnRegister.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String email=binding.editTextEmail.getText().toString();
+                String password=binding.editTextTextPassword.getText().toString();
+                boolean registroValido=true;
+                if(email.equals("")){
+                    registroValido=false;
+                    showToast("El correo no puede estar vacio");
+                }
+                else if (!correoValido(email)){
+                    registroValido=false;
+                    showToast("El correo no es valido");
+                }
+                if(password.equals("")){
+                    registroValido=false;
+                    showToast("La contraseña no puede estar vacia");
+                }
+                else if(password.length()<6){
+                    registroValido=false;
+                    showToast("La contraseña debe tener como minimo 6 caracteres");
+                }
+                if(registroValido){
+                    auth.createUserWithEmailAndPassword(email,password).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+                        @Override
+                        public void onComplete(@NonNull Task<AuthResult> task) {
+                            if(task.isSuccessful()){
+                                showToast("Registro exitoso. Ya puede iniciar sesion");
+                            }
+                            else{
+                                System.out.println(task.getException());
+                                if(task.getException() instanceof FirebaseAuthInvalidCredentialsException) showToast("Registro fallido, el correo no es valido");
+                                else if(task.getException() instanceof FirebaseAuthUserCollisionException) showToast("Registro fallido, ya existe un usuario con ese correo.");
+                                else showToast("Registro fallido");
+                            }
+                        }
+                    });
+                }
+            }
+        });
+
+        //Login
+        binding.btnLogin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String email=binding.editTextEmail.getText().toString();
+                String password=binding.editTextTextPassword.getText().toString();
+                boolean loginValido=true;
+                if(email.equals("")){
+                    loginValido=false;
+                    showToast("El correo no puede estar vacio");
+                }
+                else if (!correoValido(email)){
+                    loginValido=false;
+                    showToast("El correo no es valido");
+                }
+                if(password.equals("")){
+                    loginValido=false;
+                    showToast("La contraseña no puede estar vacia");
+                }
+                if(loginValido){
+                    auth.signInWithEmailAndPassword(email,password).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+                        @Override
+                        public void onComplete(@NonNull Task<AuthResult> task) {
+                            if(task.isSuccessful()){
+                                iniciarSesion();
+                            }
+                            else{
+                                System.out.println(task.getException());
+                                if(task.getException() instanceof FirebaseAuthInvalidCredentialsException) showToast("No se pudo iniciar sesion, credenciales incorrectas");
+                            }
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    /**
+     * Método que comprueba si una cadena es un correo válido o no
+     * @param correo la cadena a comprobar
+     * @return true si sigue el formato de correo válido, false si no
+     */
+    public boolean correoValido(String correo){
+        return Patterns.EMAIL_ADDRESS.matcher(correo).matches(); //Devolvemos el resultado de si el correo concuerda con el patrón o no
     }
 
     private void handleFacebookAccessToken(AccessToken token) {
@@ -165,11 +250,7 @@ public class LoginActivity extends AppCompatActivity {
                             // Sign in success, update UI with the signed-in user's information
                             System.out.println("signInWithCredential:success");
                             user = auth.getCurrentUser();
-                            if(!dbHelper.userExists(user.getUid())) dbHelper.addUser(user); //Si el usuario no existe en la base de datos, lo añadimos
-                            dbHelper.updateUserLoginTime(user.getUid(),System.currentTimeMillis()); //Actualizamos la hora de login del usuario a ahora
-                            finish(); //Terminamos esta actividad
-                            Intent intent = new Intent(LoginActivity.this, MainActivity.class); //Creamos un Intent para ir a MainActivity
-                            startActivity(intent); //Iniciamos la actividad con el intent
+                            iniciarSesion();
                         } else {
                             // If sign in fails, display a message to the user.
                             System.out.println("signInWithCredential:failure" + task.getException());
@@ -183,8 +264,21 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
+    private void iniciarSesion(){
+        user = auth.getCurrentUser();
+        System.out.println(user);
+        if(!dbHelper.userExists(user.getUid())) dbHelper.addUser(user); //Si el usuario no existe en la base de datos, lo añadimos
+        dbHelper.updateUserLoginTime(user.getUid(),System.currentTimeMillis()); //Actualizamos la hora de login del usuario a ahora
+        finish(); //Terminamos esta actividad
+        Intent intent = new Intent(LoginActivity.this, MainActivity.class); //Creamos un Intent para ir a MainActivity
+        startActivity(intent); //Iniciamos la actividad con el intent
+    }
     private boolean checkLoginStatus() {
         FirebaseUser currentUser = auth.getCurrentUser(); //Obtenemos el usuario con sesión iniciada
         return currentUser != null; //Devuelve true si hay cuenta, es decir, si no es null, y false si es null
+    }
+
+    private void showToast(String s){
+        Toast.makeText(getApplicationContext(),s,Toast.LENGTH_SHORT).show();
     }
 }

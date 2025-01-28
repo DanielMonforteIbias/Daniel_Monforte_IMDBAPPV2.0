@@ -68,14 +68,15 @@ public class AppLifecycleManager extends Application implements Application.Acti
 
     @Override
     public void onActivityStarted(@NonNull Activity activity) {
+        System.out.println("in");
         if(!isActivityChangingConfigurations) activityReferences++;
     }
 
     @Override
     public void onActivityResumed(@NonNull Activity activity) {
+        System.out.println("in");
         isInBackground=false;
         logoutHandler.removeCallbacks(logoutRunnable);
-
         editor.putBoolean(PREF_IS_LOGGED_IN,true);
         editor.apply();
     }
@@ -83,11 +84,13 @@ public class AppLifecycleManager extends Application implements Application.Acti
     @Override
     public void onActivityPaused(@NonNull Activity activity) {
         isInBackground=true;
+        System.out.println("out");
         logoutHandler.postDelayed(logoutRunnable,LOGOUT_DELAY);
     }
 
     @Override
     public void onActivityStopped(@NonNull Activity activity) {
+        System.out.println("out");
         if(!isActivityChangingConfigurations){
             activityReferences--;
             if(activityReferences==0){
@@ -104,11 +107,13 @@ public class AppLifecycleManager extends Application implements Application.Acti
 
     @Override
     public void onActivityDestroyed(@NonNull Activity activity) {
+        System.out.println("out");
         isActivityChangingConfigurations=activity.isChangingConfigurations();
     }
 
     @Override
     public void onTrimMemory(int level) {
+        System.out.println("trim: "+level);
         if(level==TRIM_MEMORY_UI_HIDDEN){
             FirebaseUser user=FirebaseAuth.getInstance().getCurrentUser();
             if(user!=null){
@@ -123,5 +128,10 @@ public class AppLifecycleManager extends Application implements Application.Acti
     private void registerUserLogout(FirebaseUser user){
         if(user==null) return;
         dbHelper.updateUserLogoutTime(user.getUid(),System.currentTimeMillis());
+    }
+
+    private void registerUserLogin(FirebaseUser user){
+        if(user==null) return;
+        dbHelper.updateUserLoginTime(user.getUid(),System.currentTimeMillis());
     }
 }

@@ -113,6 +113,12 @@ public class MainActivity extends AppCompatActivity {
                 request.setParameters(parameters);
                 request.executeAsync();
             }
+
+        }
+        else if(providerId.equals("password")){
+            txtNombre.setText("");
+            txtEmail.setText(user.getEmail());
+            imgFoto.setImageResource(R.drawable.usuario);
         }
 
         //OnClick del botón para cerrar sesión
@@ -135,6 +141,8 @@ public class MainActivity extends AppCompatActivity {
                             LoginManager.getInstance().logOut();
                             System.out.println("Cerraste sesión de Facebook");
                         }
+                        break;
+                    case "password":
                         break;
                     default:
                         Toast.makeText(getApplicationContext(),"Error en el ID del proveedor al cerrar sesion",Toast.LENGTH_SHORT).show();

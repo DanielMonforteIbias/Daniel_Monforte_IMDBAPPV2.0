@@ -11,15 +11,22 @@ import androidx.annotation.Nullable;
 import com.google.firebase.auth.FirebaseUser;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
+
+import edu.pmdm.monforte_danielimdbapp.models.User;
 
 public class UsersDatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME="users.db"; //Nombre de la base de datos
     private SQLiteDatabase database; //Variable para operar en la base de datos
 
     private final String USERS_TABLE_NAME="USERS";
-    private static int databaseVersion=1; //Version actual de la base de datos
+    //VERSIONS
+    //Version 1: users table
+    //Version 2: removed NOT NULL from name
+    private static int databaseVersion=2; //Version actual de la base de datos
 
     private ContentValues values; //Variable usada para el contenido de las inserciones
     public UsersDatabaseHelper(Context context) {
@@ -30,13 +37,14 @@ public class UsersDatabaseHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         //Query para crear la tabla de users
-        String createTableUsers="CREATE TABLE "+USERS_TABLE_NAME+" (userId TEXT PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL, loginTime TIMESTAMP, logoutTime TIMESTAMP)";
+        String createTableUsers="CREATE TABLE "+USERS_TABLE_NAME+" (userId TEXT PRIMARY KEY, name TEXT, email TEXT NOT NULL, loginTime TIMESTAMP, logoutTime TIMESTAMP)";
         db.execSQL(createTableUsers);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-
+        db.execSQL("DROP TABLE "+USERS_TABLE_NAME);
+        onCreate(db);
     }
 
     public void addUser(FirebaseUser user){
@@ -78,5 +86,17 @@ public class UsersDatabaseHelper extends SQLiteOpenHelper {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss",Locale.getDefault());
         Date date = new Date(time);
         return format.format(date);
+    }
+
+    public List<User> getUsers(){
+        List<User>users=new ArrayList<User>();
+        Cursor cursor=database.rawQuery("SELECT userId, name, email FROM "+USERS_TABLE_NAME,null);
+        while(cursor.moveToNext()){
+            String userId=cursor.getString(0);
+            String name=cursor.getString(1);
+            String email=cursor.getString(2);
+            users.add(new User(userId,name,email));
+        }
+        return users;
     }
 }

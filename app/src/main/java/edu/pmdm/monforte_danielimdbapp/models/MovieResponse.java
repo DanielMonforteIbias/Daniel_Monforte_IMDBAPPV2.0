@@ -56,7 +56,7 @@ public class MovieResponse {
                 }
                 else { //Si la respuesta no ha sido exitosa
                     if(context!=null) new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(context, R.string.error_respuesta_api, Toast.LENGTH_SHORT).show()); //Mostramos un Toast con informacion del error. Se usa Handler para que se haga en el hilo principal
-                    System.out.println("Error de la API: "+response.message()+" "+response.code()+" "+response.body().toString());
+                    System.out.println("Error de la API: "+response.message()+" "+response.code()+" "+response.body().toString().toString());
                 }
             }
         });
