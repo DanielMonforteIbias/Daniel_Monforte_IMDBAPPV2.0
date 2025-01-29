@@ -78,7 +78,7 @@ public class LoginActivity extends AppCompatActivity {
         });
 
         FavoritesSync sync=new FavoritesSync(this);
-        sync.syncFavoritesToFirebase();
+        sync.syncFavoritesFromFirebase();
 
         //Sincronizar con Firebase
         signInRequest = BeginSignInRequest.builder()

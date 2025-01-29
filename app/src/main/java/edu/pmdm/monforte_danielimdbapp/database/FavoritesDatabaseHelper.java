@@ -81,11 +81,12 @@ public class FavoritesDatabaseHelper extends SQLiteOpenHelper {
      * @param userId el id del usuario
      * @param movieId el id de la película
      */
-    public void addFavorite(String userId, String movieId){
+    public void addFavorite(String userId, String movieId, String insertionTime){
         values = new ContentValues(); //Inicializamos la variable values para guardar en ella a continuación los valores a insertar
         //Ponemos los ids, usando como key los nombres de las columnas en la tabla
         values.put("userId", userId);
         values.put("movieId", movieId);
+        if(insertionTime!=null) values.put("insertionTime",insertionTime); //Si el tiempo no es nulo, lo  añadimos. Si lo es, la base de datos se encargara de poner el actual
         database.insert(FAVORITES_TABLE_NAME,null,values); //Insertamos el registro en FAVORITES
         new FavoritesSync(context).addFavoriteToFirebase(userId,movieId);
     }

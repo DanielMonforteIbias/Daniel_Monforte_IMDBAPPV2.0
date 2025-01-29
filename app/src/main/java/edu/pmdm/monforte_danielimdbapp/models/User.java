@@ -7,6 +7,13 @@ public class User {
     String loginTime;
     String logoutTime;
 
+    public User() {
+        this.userId = "";
+        this.name ="";
+        this.email = "";
+        this.loginTime = "";
+        this.logoutTime = "";
+    }
     public User(String userId, String name, String email) {
         this.userId = userId;
         this.name = name;

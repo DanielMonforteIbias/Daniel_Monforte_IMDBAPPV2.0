@@ -23,9 +23,9 @@ public class AppLifecycleManager extends Application implements Application.Acti
 
     private static final String PREF_NAME="Prefs";
     private static final String PREF_IS_LOGGED_IN="isLoggedIn";
-    private static final int LOGOUT_DELAY=10000;
+    private static final int DELAY =1000;
 
-    private final Handler logoutHandler=new Handler();
+    private final Handler handler =new Handler();
     private final Runnable logoutRunnable=new Runnable() {
         @Override
         public void run() {
@@ -33,6 +33,17 @@ public class AppLifecycleManager extends Application implements Application.Acti
             if (currentUser != null) {
                 registerUserLogout(currentUser);
                 editor.putBoolean(PREF_IS_LOGGED_IN,false);
+                editor.apply();
+            }
+        }
+    };
+    private final Runnable loginRunnable=new Runnable() {
+        @Override
+        public void run() {
+            FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+            if (currentUser != null) {
+                registerUserLogin(currentUser);
+                editor.putBoolean(PREF_IS_LOGGED_IN,true);
                 editor.apply();
             }
         }
@@ -59,6 +70,7 @@ public class AppLifecycleManager extends Application implements Application.Acti
         preferences=getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         editor=preferences.edit();
         dbHelper=new UsersDatabaseHelper(this);
+        registerActivityLifecycleCallbacks(this);
     }
 
     @Override
@@ -76,7 +88,8 @@ public class AppLifecycleManager extends Application implements Application.Acti
     public void onActivityResumed(@NonNull Activity activity) {
         System.out.println("in");
         isInBackground=false;
-        logoutHandler.removeCallbacks(logoutRunnable);
+        handler.removeCallbacks(logoutRunnable);
+        handler.postDelayed(loginRunnable, DELAY);
         editor.putBoolean(PREF_IS_LOGGED_IN,true);
         editor.apply();
     }
@@ -85,7 +98,7 @@ public class AppLifecycleManager extends Application implements Application.Acti
     public void onActivityPaused(@NonNull Activity activity) {
         isInBackground=true;
         System.out.println("out");
-        logoutHandler.postDelayed(logoutRunnable,LOGOUT_DELAY);
+        handler.postDelayed(logoutRunnable, DELAY);
     }
 
     @Override
@@ -95,7 +108,7 @@ public class AppLifecycleManager extends Application implements Application.Acti
             activityReferences--;
             if(activityReferences==0){
                 isAppClosed=true;
-                logoutHandler.postDelayed(logoutRunnable,LOGOUT_DELAY);
+                handler.postDelayed(logoutRunnable, DELAY);
             }
         }
     }
@@ -113,7 +126,6 @@ public class AppLifecycleManager extends Application implements Application.Acti
 
     @Override
     public void onTrimMemory(int level) {
-        System.out.println("trim: "+level);
         if(level==TRIM_MEMORY_UI_HIDDEN){
             FirebaseUser user=FirebaseAuth.getInstance().getCurrentUser();
             if(user!=null){

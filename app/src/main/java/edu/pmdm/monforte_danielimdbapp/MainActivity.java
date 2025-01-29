@@ -38,6 +38,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import edu.pmdm.monforte_danielimdbapp.database.UsersDatabaseHelper;
 import edu.pmdm.monforte_danielimdbapp.databinding.ActivityMainBinding;
+import edu.pmdm.monforte_danielimdbapp.sync.FavoritesSync;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -75,7 +76,6 @@ public class MainActivity extends AppCompatActivity {
         NavigationUI.setupWithNavController(navigationView, navController);
 
         dbHelper=new UsersDatabaseHelper(this);
-
         //Obtenemos algunos componentes del headerView para modificarlos
         txtNombre=headerView.findViewById(R.id.txtNombre);
         txtEmail=headerView.findViewById(R.id.txtEmail);
@@ -143,6 +143,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                         break;
                     case "password":
+                        //No se hace nada, es necesario contemplarlo para que no salte el default
                         break;
                     default:
                         Toast.makeText(getApplicationContext(),"Error en el ID del proveedor al cerrar sesion",Toast.LENGTH_SHORT).show();

@@ -99,4 +99,15 @@ public class UsersDatabaseHelper extends SQLiteOpenHelper {
         }
         return users;
     }
+
+    public User getUser(String userId){
+        User user=new User();
+        Cursor cursor=database.rawQuery("SELECT * FROM "+USERS_TABLE_NAME+" WHERE userId=?",new String[]{userId});
+        if(cursor.moveToNext()){
+            user.setUserId(cursor.getString(0));
+            user.setName(cursor.getString(1));
+            user.setEmail(cursor.getString(2));
+        }
+        return user;
+    }
 }

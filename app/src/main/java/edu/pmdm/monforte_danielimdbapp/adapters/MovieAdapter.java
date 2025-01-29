@@ -106,7 +106,7 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder>{
                     else Toast.makeText(context,pelicula.getTitulo()+" ya está en Favoritos",Toast.LENGTH_SHORT).show(); //Si no, decimos al usuario que ya está en favoritos
                 }
                 else{ //Si no es favorita del usuario
-                    dbHelper.addFavorite(userId,pelicula.getId()); //La añadimos a sus favoritos
+                    dbHelper.addFavorite(userId,pelicula.getId(),null); //La añadimos a sus favoritos
                     Toast.makeText(context,"Agregada a favoritos: "+pelicula.getTitulo(),Toast.LENGTH_SHORT).show(); //Mostramos un Toast con la informacion
                 }
                 return true; //Devolvemos true para consumir la llamada
