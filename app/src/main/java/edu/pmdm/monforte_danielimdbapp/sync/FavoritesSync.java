@@ -62,7 +62,6 @@ public class FavoritesSync {
         db.collection("favorites").get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
             @Override
             public void onSuccess(QuerySnapshot userDocumentSnapshots) {
-                System.out.println(userDocumentSnapshots.getDocuments().size());
                 for (DocumentSnapshot userDocument : userDocumentSnapshots.getDocuments()) {
                     String userId = userDocument.getId();
                     db.collection("favorites").document(userId).collection("movies").get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {

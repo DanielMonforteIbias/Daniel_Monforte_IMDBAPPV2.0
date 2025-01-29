@@ -24,7 +24,6 @@ import com.facebook.FacebookException;
 import com.facebook.FacebookSdk;
 import com.facebook.login.LoginResult;
 import com.google.android.gms.auth.api.identity.BeginSignInRequest;
-import com.google.android.gms.auth.api.identity.SignInCredential;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -41,7 +40,7 @@ import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 
-import edu.pmdm.monforte_danielimdbapp.database.UsersDatabaseHelper;
+import edu.pmdm.monforte_danielimdbapp.database.FavoritesDatabaseHelper;
 import edu.pmdm.monforte_danielimdbapp.databinding.ActivityLoginBinding;
 import edu.pmdm.monforte_danielimdbapp.models.User;
 import edu.pmdm.monforte_danielimdbapp.sync.FavoritesSync;
@@ -56,15 +55,17 @@ public class LoginActivity extends AppCompatActivity {
     private GoogleSignInClient gClient;
     private ActivityLoginBinding binding;
     private ActivityResultLauncher<Intent> activityResultLauncher;
-    private UsersDatabaseHelper dbHelper;
+
+    private FavoritesDatabaseHelper dbHelper;
 
     private FavoritesSync favoritesSync;
     private UsersSync usersSync;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         auth = FirebaseAuth.getInstance();
-        dbHelper=new UsersDatabaseHelper(this);
+        dbHelper =new FavoritesDatabaseHelper(this);
         if (checkLoginStatus()) { //Si ya hay sesion iniciada
             user=auth.getCurrentUser();
             dbHelper.updateUserLoginTime(user.getUid(),System.currentTimeMillis()); //Actualizamos la hora de login del usuario a ahora
@@ -80,11 +81,11 @@ public class LoginActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-
-        favoritesSync=new FavoritesSync(this);
-        favoritesSync.syncFavoritesFromFirebase();
         usersSync=new UsersSync(this);
         usersSync.syncUsersFromFirebase();
+        favoritesSync=new FavoritesSync(this);
+        favoritesSync.syncFavoritesFromFirebase();
+
 
         //Sincronizar con Firebase
         signInRequest = BeginSignInRequest.builder()
@@ -273,7 +274,7 @@ public class LoginActivity extends AppCompatActivity {
     private void iniciarSesion(){
         user = auth.getCurrentUser();
         if(!dbHelper.userExists(user.getUid())) { //Si el usuario no existe en la base de datos,
-            dbHelper.addUser(user); //Lo añadimos a la local
+            dbHelper.addUser(new User(user.getUid(),user.getDisplayName(),user.getEmail())); //Lo añadimos a la local
             usersSync.addUserToFirebase(new User(user.getUid(),user.getDisplayName(),user.getEmail())); //Lo añadimos a Firebase
         }
         dbHelper.updateUserLoginTime(user.getUid(),System.currentTimeMillis()); //Actualizamos la hora de login del usuario a ahora

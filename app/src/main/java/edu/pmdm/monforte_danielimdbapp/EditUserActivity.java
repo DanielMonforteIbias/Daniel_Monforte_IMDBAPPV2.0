@@ -5,17 +5,13 @@ import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
-import edu.pmdm.monforte_danielimdbapp.database.UsersDatabaseHelper;
+import edu.pmdm.monforte_danielimdbapp.database.FavoritesDatabaseHelper;
 import edu.pmdm.monforte_danielimdbapp.databinding.ActivityEditUserBinding;
-import edu.pmdm.monforte_danielimdbapp.databinding.ActivityMainBinding;
 import edu.pmdm.monforte_danielimdbapp.models.User;
 
 public class EditUserActivity extends AppCompatActivity {
-    private UsersDatabaseHelper dbHelper;
+    private FavoritesDatabaseHelper dbHelper;
     private ActivityEditUserBinding binding;
 
     @Override
@@ -25,7 +21,7 @@ public class EditUserActivity extends AppCompatActivity {
         binding = ActivityEditUserBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        dbHelper=new UsersDatabaseHelper(this);
+        dbHelper=new FavoritesDatabaseHelper(this);
         Intent intent=getIntent();
         String userId=intent.getStringExtra("userId");
         User user=dbHelper.getUser(userId);

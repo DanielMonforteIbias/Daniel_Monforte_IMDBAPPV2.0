@@ -18,7 +18,6 @@ import com.facebook.AccessToken;
 import com.facebook.GraphRequest;
 import com.facebook.login.LoginManager;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -26,7 +25,6 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.auth.UserInfo;
 
 import androidx.annotation.NonNull;
 import androidx.navigation.NavController;
@@ -36,9 +34,8 @@ import androidx.navigation.ui.NavigationUI;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.appcompat.app.AppCompatActivity;
 
-import edu.pmdm.monforte_danielimdbapp.database.UsersDatabaseHelper;
+import edu.pmdm.monforte_danielimdbapp.database.FavoritesDatabaseHelper;
 import edu.pmdm.monforte_danielimdbapp.databinding.ActivityMainBinding;
-import edu.pmdm.monforte_danielimdbapp.sync.FavoritesSync;
 import edu.pmdm.monforte_danielimdbapp.sync.UsersSync;
 
 public class MainActivity extends AppCompatActivity {
@@ -52,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
     private Button btnLogout;
 
     private FirebaseUser user;
-    private UsersDatabaseHelper dbHelper;
+    private FavoritesDatabaseHelper dbHelper;
     private UsersSync usersSync;
     private String providerId;
 
@@ -77,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
 
-        dbHelper=new UsersDatabaseHelper(this);
+        dbHelper=new FavoritesDatabaseHelper(this);
         usersSync=new UsersSync(this);
         //Obtenemos algunos componentes del headerView para modificarlos
         txtNombre=headerView.findViewById(R.id.txtNombre);

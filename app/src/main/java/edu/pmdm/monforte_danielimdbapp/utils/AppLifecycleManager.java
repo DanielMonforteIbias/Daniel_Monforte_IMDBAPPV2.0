@@ -13,14 +13,14 @@ import androidx.annotation.Nullable;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
-import edu.pmdm.monforte_danielimdbapp.database.UsersDatabaseHelper;
+import edu.pmdm.monforte_danielimdbapp.database.FavoritesDatabaseHelper;
 import edu.pmdm.monforte_danielimdbapp.sync.UsersSync;
 
 public class AppLifecycleManager extends Application implements Application.ActivityLifecycleCallbacks{
     private SharedPreferences preferences;
     private SharedPreferences.Editor editor;
 
-    private UsersDatabaseHelper dbHelper;
+    private FavoritesDatabaseHelper dbHelper;
     private UsersSync sync;
 
     private static final String PREF_NAME="Prefs";
@@ -71,7 +71,7 @@ public class AppLifecycleManager extends Application implements Application.Acti
         super.onCreate();
         preferences=getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         editor=preferences.edit();
-        dbHelper=new UsersDatabaseHelper(this);
+        dbHelper=new FavoritesDatabaseHelper(this);
         registerActivityLifecycleCallbacks(this);
         sync=new UsersSync(this);
     }

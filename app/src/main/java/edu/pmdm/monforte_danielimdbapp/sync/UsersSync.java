@@ -2,48 +2,62 @@ package edu.pmdm.monforte_danielimdbapp.sync;
 
 import android.content.Context;
 
-import com.google.firebase.firestore.CollectionReference;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import edu.pmdm.monforte_danielimdbapp.database.FavoritesDatabaseHelper;
-import edu.pmdm.monforte_danielimdbapp.database.UsersDatabaseHelper;
 import edu.pmdm.monforte_danielimdbapp.models.Movie;
 import edu.pmdm.monforte_danielimdbapp.models.User;
 
 public class UsersSync {
-    private UsersDatabaseHelper dbHelper; //Necesitamos un objeto de esta clase para usar metodos de la base de datos local
     private FirebaseFirestore db;
+    FavoritesDatabaseHelper dbHelper;
 
-    public UsersSync(Context c){
-        db= FirebaseFirestore.getInstance(); //Inicializamos la variable para la base de datos de Firebase
-        dbHelper=new UsersDatabaseHelper(c); //Inicializamos tambien la variable para la base de datos local
+    public UsersSync(Context c) {
+        db = FirebaseFirestore.getInstance(); //Inicializamos la variable para la base de datos de Firebase
+        dbHelper = new FavoritesDatabaseHelper(c); //Inicializamos tambien la variable para la base de datos local
     }
 
-    public void syncUsersFromFirebase(){
-
+    /**
+     * Método que sincroniza el contenido de la base de daos de Firebase con la tabla local de usuarios
+     */
+    public void syncUsersFromFirebase() {
+        db.collection("users").get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+            @Override
+            public void onSuccess(QuerySnapshot userDocumentSnapshots) {
+                for (DocumentSnapshot userDocument : userDocumentSnapshots.getDocuments()) {
+                    String userId = userDocument.getString("userId");
+                    String userName = userDocument.getString("name");
+                    String userEmail = userDocument.getString("email");
+                    if(!dbHelper.userExists(userId)) dbHelper.addUser(new User(userId,userName,userEmail));
+                }
+            }
+        });
     }
+
     /**
      * Método que añade un usuario recibido a la base de datos de Firebase
      */
-    public void addUserToFirebase(User user){
+    public void addUserToFirebase(User user) {
         DocumentReference userDocument = db.collection("users").document(user.getUserId()); //La colección de favoritos tendrá un documento para cada usuario, con su id como nombre
         Map<String, Object> userMap = new HashMap<>(); //Creamos un mapa para poner los datos del usuario
-        userMap.put("userId",user.getUserId());
-        userMap.put("name",user.getName());
-        userMap.put("email",user.getEmail());
+        userMap.put("userId", user.getUserId());
+        userMap.put("name", user.getName());
+        userMap.put("email", user.getEmail());
         userDocument.set(userMap);
     }
 
     public void addActivityLogToUser(String userId) {
         DocumentReference userDocument = db.collection("users").document(userId);
         Map<String, String> newLog = new HashMap<>();
-        User user=dbHelper.getUser(userId);
+        User user = dbHelper.getUser(userId);
         //Guardamos en Firebase la ultima pareja de login-logout, que es la que hay en local
         newLog.put("login_time", user.getLoginTime());
         newLog.put("logout_time", user.getLogoutTime());
