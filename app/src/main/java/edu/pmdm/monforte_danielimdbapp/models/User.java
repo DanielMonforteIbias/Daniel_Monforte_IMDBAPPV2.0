@@ -45,4 +45,20 @@ public class User {
     public void setEmail(String email) {
         this.email = email;
     }
+
+    public String getLoginTime() {
+        return loginTime;
+    }
+
+    public void setLoginTime(String loginTime) {
+        this.loginTime = loginTime;
+    }
+
+    public String getLogoutTime() {
+        return logoutTime;
+    }
+
+    public void setLogoutTime(String logoutTime) {
+        this.logoutTime = logoutTime;
+    }
 }

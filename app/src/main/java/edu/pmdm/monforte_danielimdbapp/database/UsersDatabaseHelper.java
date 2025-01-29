@@ -107,6 +107,8 @@ public class UsersDatabaseHelper extends SQLiteOpenHelper {
             user.setUserId(cursor.getString(0));
             user.setName(cursor.getString(1));
             user.setEmail(cursor.getString(2));
+            user.setLoginTime(cursor.getString(3));
+            user.setLogoutTime(cursor.getString(4));
         }
         return user;
     }

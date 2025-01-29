@@ -14,12 +14,14 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import edu.pmdm.monforte_danielimdbapp.database.UsersDatabaseHelper;
+import edu.pmdm.monforte_danielimdbapp.sync.UsersSync;
 
 public class AppLifecycleManager extends Application implements Application.ActivityLifecycleCallbacks{
     private SharedPreferences preferences;
     private SharedPreferences.Editor editor;
 
     private UsersDatabaseHelper dbHelper;
+    private UsersSync sync;
 
     private static final String PREF_NAME="Prefs";
     private static final String PREF_IS_LOGGED_IN="isLoggedIn";
@@ -71,6 +73,7 @@ public class AppLifecycleManager extends Application implements Application.Acti
         editor=preferences.edit();
         dbHelper=new UsersDatabaseHelper(this);
         registerActivityLifecycleCallbacks(this);
+        sync=new UsersSync(this);
     }
 
     @Override
@@ -80,13 +83,11 @@ public class AppLifecycleManager extends Application implements Application.Acti
 
     @Override
     public void onActivityStarted(@NonNull Activity activity) {
-        System.out.println("in");
         if(!isActivityChangingConfigurations) activityReferences++;
     }
 
     @Override
     public void onActivityResumed(@NonNull Activity activity) {
-        System.out.println("in");
         isInBackground=false;
         handler.removeCallbacks(logoutRunnable);
         handler.postDelayed(loginRunnable, DELAY);
@@ -97,13 +98,11 @@ public class AppLifecycleManager extends Application implements Application.Acti
     @Override
     public void onActivityPaused(@NonNull Activity activity) {
         isInBackground=true;
-        System.out.println("out");
         handler.postDelayed(logoutRunnable, DELAY);
     }
 
     @Override
     public void onActivityStopped(@NonNull Activity activity) {
-        System.out.println("out");
         if(!isActivityChangingConfigurations){
             activityReferences--;
             if(activityReferences==0){
@@ -120,7 +119,6 @@ public class AppLifecycleManager extends Application implements Application.Acti
 
     @Override
     public void onActivityDestroyed(@NonNull Activity activity) {
-        System.out.println("out");
         isActivityChangingConfigurations=activity.isChangingConfigurations();
     }
 
@@ -140,6 +138,7 @@ public class AppLifecycleManager extends Application implements Application.Acti
     private void registerUserLogout(FirebaseUser user){
         if(user==null) return;
         dbHelper.updateUserLogoutTime(user.getUid(),System.currentTimeMillis());
+        sync.addActivityLogToUser(user.getUid());
     }
 
     private void registerUserLogin(FirebaseUser user){

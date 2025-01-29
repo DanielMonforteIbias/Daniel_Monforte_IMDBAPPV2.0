@@ -43,7 +43,9 @@ import com.google.firebase.auth.GoogleAuthProvider;
 
 import edu.pmdm.monforte_danielimdbapp.database.UsersDatabaseHelper;
 import edu.pmdm.monforte_danielimdbapp.databinding.ActivityLoginBinding;
+import edu.pmdm.monforte_danielimdbapp.models.User;
 import edu.pmdm.monforte_danielimdbapp.sync.FavoritesSync;
+import edu.pmdm.monforte_danielimdbapp.sync.UsersSync;
 
 public class LoginActivity extends AppCompatActivity {
     private FirebaseAuth auth;
@@ -56,6 +58,8 @@ public class LoginActivity extends AppCompatActivity {
     private ActivityResultLauncher<Intent> activityResultLauncher;
     private UsersDatabaseHelper dbHelper;
 
+    private FavoritesSync favoritesSync;
+    private UsersSync usersSync;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -77,8 +81,10 @@ public class LoginActivity extends AppCompatActivity {
             return insets;
         });
 
-        FavoritesSync sync=new FavoritesSync(this);
-        sync.syncFavoritesFromFirebase();
+        favoritesSync=new FavoritesSync(this);
+        favoritesSync.syncFavoritesFromFirebase();
+        usersSync=new UsersSync(this);
+        usersSync.syncUsersFromFirebase();
 
         //Sincronizar con Firebase
         signInRequest = BeginSignInRequest.builder()
@@ -266,8 +272,10 @@ public class LoginActivity extends AppCompatActivity {
 
     private void iniciarSesion(){
         user = auth.getCurrentUser();
-        System.out.println(user);
-        if(!dbHelper.userExists(user.getUid())) dbHelper.addUser(user); //Si el usuario no existe en la base de datos, lo añadimos
+        if(!dbHelper.userExists(user.getUid())) { //Si el usuario no existe en la base de datos,
+            dbHelper.addUser(user); //Lo añadimos a la local
+            usersSync.addUserToFirebase(new User(user.getUid(),user.getDisplayName(),user.getEmail())); //Lo añadimos a Firebase
+        }
         dbHelper.updateUserLoginTime(user.getUid(),System.currentTimeMillis()); //Actualizamos la hora de login del usuario a ahora
         finish(); //Terminamos esta actividad
         Intent intent = new Intent(LoginActivity.this, MainActivity.class); //Creamos un Intent para ir a MainActivity

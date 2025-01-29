@@ -39,4 +39,10 @@
     <string name="error_respuesta_api">Error en la respuesta de la API</string>
     <string name="error_inicio_sesion">Error en el inicio de sesión</string>
     <string name="error_inicio_sesion_api">Error de la API al iniciar sesion</string>
+
+    <string name="seleccionar_direccion">SELECCIONAR DIRECCION</string>
+    <string name="seleccionar_imagen">SELECCIONAR IMAGEN</string>
+    <string name="guardar">GUARDAR</string>
+    <string name="address_placeholder">Address</string>
+    <string name="phone_placeholder">Phone</string>
 </resources>
