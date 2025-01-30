@@ -17,11 +17,13 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.bumptech.glide.Glide;
 import com.facebook.AccessToken;
 import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
 import com.facebook.FacebookSdk;
+import com.facebook.GraphRequest;
 import com.facebook.login.LoginResult;
 import com.google.android.gms.auth.api.identity.BeginSignInRequest;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -123,7 +125,7 @@ public class LoginActivity extends AppCompatActivity {
                                         @Override
                                         public void onComplete(@NonNull Task<AuthResult> task) { //Al completar la tarea
                                             if (task.isSuccessful()) { //Si ha sido exitosa
-                                                iniciarSesion();
+                                                iniciarSesion("google");
                                             }
                                         }
                                     });
@@ -224,7 +226,7 @@ public class LoginActivity extends AppCompatActivity {
                         @Override
                         public void onComplete(@NonNull Task<AuthResult> task) {
                             if(task.isSuccessful()){
-                                iniciarSesion();
+                                iniciarSesion("password");
                             }
                             else{
                                 System.out.println(task.getException());
@@ -257,7 +259,7 @@ public class LoginActivity extends AppCompatActivity {
                             // Sign in success, update UI with the signed-in user's information
                             System.out.println("signInWithCredential:success");
                             user = auth.getCurrentUser();
-                            iniciarSesion();
+                            iniciarSesion("facebook");
                         } else {
                             // If sign in fails, display a message to the user.
                             System.out.println("signInWithCredential:failure" + task.getException());
@@ -271,17 +273,21 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
-    private void iniciarSesion(){
+    private void iniciarSesion(String provider){
         user = auth.getCurrentUser();
-        if(!dbHelper.userExists(user.getUid())) { //Si el usuario no existe en la base de datos,
-            dbHelper.addUser(new User(user.getUid(),user.getDisplayName(),user.getEmail())); //Lo añadimos a la local
-            usersSync.addUserToFirebase(new User(user.getUid(),user.getDisplayName(),user.getEmail())); //Lo añadimos a Firebase
+        if(!dbHelper.userExists(user.getUid())) { //Si el usuario no existe en la base de datos
+            String image="";
+            if(provider.equals("google"))image=user.getPhotoUrl().toString();
+            dbHelper.addUser(new User(user.getUid(),user.getDisplayName(),user.getEmail(),image)); //Lo añadimos a la local
+            usersSync.addUserToFirebase(new User(user.getUid(),user.getDisplayName(),user.getEmail(),image)); //Lo añadimos a Firebase
         }
+
         dbHelper.updateUserLoginTime(user.getUid(),System.currentTimeMillis()); //Actualizamos la hora de login del usuario a ahora
         finish(); //Terminamos esta actividad
         Intent intent = new Intent(LoginActivity.this, MainActivity.class); //Creamos un Intent para ir a MainActivity
         startActivity(intent); //Iniciamos la actividad con el intent
     }
+
     private boolean checkLoginStatus() {
         FirebaseUser currentUser = auth.getCurrentUser(); //Obtenemos el usuario con sesión iniciada
         return currentUser != null; //Devuelve true si hay cuenta, es decir, si no es null, y false si es null

@@ -32,7 +32,8 @@ public class FavoritesDatabaseHelper extends SQLiteOpenHelper {
     //Version 3: Añade la columna movieDate a MOVIES
     //Version 4: Añade la columna movieRating a MOVIES
     //Version 5: Crear la tabla USERS
-    private static int databaseVersion=5; //Version actual de la base de datos
+    //Version 6: Restriccion FK userId en FAVORITES y campos en USERS
+    private static int databaseVersion=6; //Version actual de la base de datos
 
     private ContentValues values; //Variable usada para el contenido de las inserciones
     private Context context;
@@ -49,10 +50,10 @@ public class FavoritesDatabaseHelper extends SQLiteOpenHelper {
         String createTableMovies="CREATE TABLE "+MOVIES_TABLE_NAME+" (movieId TEXT PRIMARY KEY, movieTitle TEXT NOT NULL, movieImage TEXT, movieDate TEXT, movieRating REAL)";
         db.execSQL(createTableMovies);
         //Query para crear la tabla de favoritos
-        String createTableFavorites="CREATE TABLE "+FAVORITES_TABLE_NAME+" (userId TEXT NOT NULL, movieId TEXT NOT NULL, insertionTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(userId, movieId), FOREIGN KEY(movieId) REFERENCES MOVIES(movieId))";
+        String createTableFavorites="CREATE TABLE "+FAVORITES_TABLE_NAME+" (userId TEXT NOT NULL, movieId TEXT NOT NULL, insertionTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(userId, movieId), FOREIGN KEY(movieId) REFERENCES MOVIES(movieId), FOREIGN KEY(userId) REFERENCES USERS(userId))";
         db.execSQL(createTableFavorites);
         //Query para crear la tabla de usuarios
-        String createTableUsers="CREATE TABLE "+USERS_TABLE_NAME+" (userId TEXT PRIMARY KEY, name TEXT, email TEXT NOT NULL, loginTime TIMESTAMP, logoutTime TIMESTAMP)";
+        String createTableUsers="CREATE TABLE "+USERS_TABLE_NAME+" (userId TEXT PRIMARY KEY, name TEXT, email TEXT NOT NULL, loginTime TIMESTAMP, logoutTime TIMESTAMP, address, phone TEXT, image TEXT)";
         db.execSQL(createTableUsers);
     }
 
@@ -62,6 +63,11 @@ public class FavoritesDatabaseHelper extends SQLiteOpenHelper {
         if (oldVersion < 3) db.execSQL("ALTER TABLE " + MOVIES_TABLE_NAME + " ADD COLUMN movieDate TEXT DEFAULT ''"); //Si antes estabamos debajo de la version 3, añadimos la columna movieDate a MOVIES
         if(oldVersion<4)db.execSQL("ALTER TABLE " + MOVIES_TABLE_NAME + " ADD COLUMN movieRating REAL DEFAULT 0"); //Si antes estabamos debajo de la version 4, añadimos la columna movieRating a MOVIES
         if(oldVersion<5)db.execSQL("CREATE TABLE "+USERS_TABLE_NAME+" (userId TEXT PRIMARY KEY, name TEXT, email TEXT NOT NULL, loginTime TIMESTAMP, logoutTime TIMESTAMP)");
+        if(oldVersion<6){
+            db.execSQL("ALTER TABLE "+USERS_TABLE_NAME+" ADD COLUMN address TEXT");
+            db.execSQL("ALTER TABLE "+USERS_TABLE_NAME+" ADD COLUMN phone TEXT");
+            db.execSQL("ALTER TABLE "+USERS_TABLE_NAME+" ADD COLUMN image TEXT");
+        }
     }
 
     /**
@@ -217,6 +223,9 @@ public class FavoritesDatabaseHelper extends SQLiteOpenHelper {
         values.put("email",user.getEmail());
         values.put("loginTime", (String) null);
         values.put("logoutTime", (String) null);
+        values.put("address",user.getAddress());
+        values.put("phone",user.getPhone());
+        values.put("image",user.getImage());
         database.insert(USERS_TABLE_NAME,null,values);
     }
 
@@ -272,7 +281,28 @@ public class FavoritesDatabaseHelper extends SQLiteOpenHelper {
             user.setEmail(cursor.getString(2));
             user.setLoginTime(cursor.getString(3));
             user.setLogoutTime(cursor.getString(4));
+            user.setAddress(cursor.getString(5));
+            user.setPhone(cursor.getString(6));
+            user.setImage(cursor.getString(7));
         }
         return user;
+    }
+
+    public void updateUser(User user){
+        values = new ContentValues(); //Inicializamos la variable values para guardar en ella a continuación los valores a insertar
+        //Ponemos los datos a insertar, usando como key el nombre de la columna
+        values.put("name", user.getName());
+        values.put("address", user.getAddress());
+        values.put("phone",user.getPhone());
+        values.put("image",user.getImage());
+        String where="userId=?";
+        database.update(USERS_TABLE_NAME,values,where,new String[]{user.getUserId()});
+    }
+    public void updateUserImage(String userId, String image){
+        values = new ContentValues(); //Inicializamos la variable values para guardar en ella a continuación los valores a insertar
+        //Ponemos los datos a insertar, usando como key el nombre de la columna
+        values.put("image", image);
+        String where="userId=?";
+        database.update(USERS_TABLE_NAME,values,where,new String[]{userId});
     }
 }

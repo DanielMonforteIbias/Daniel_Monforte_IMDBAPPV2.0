@@ -2,6 +2,7 @@ package edu.pmdm.monforte_danielimdbapp;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -27,5 +28,17 @@ public class EditUserActivity extends AppCompatActivity {
         User user=dbHelper.getUser(userId);
         binding.editTextName.setText(user.getName());
         binding.editTextMail.setText(user.getEmail());
+
+        binding.btnGuardarUsuario.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String name=binding.editTextName.getText().toString();
+                String address=binding.editTextAddress.getText().toString();
+                String phone=binding.editTextPhone.getText().toString();
+                String image="";
+                dbHelper.updateUser(new User(userId,name,user.getEmail(),address,phone,image));
+                finish();
+            }
+        });
     }
 }

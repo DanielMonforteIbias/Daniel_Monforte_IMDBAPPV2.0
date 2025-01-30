@@ -1,11 +1,14 @@
 package edu.pmdm.monforte_danielimdbapp.models;
 
 public class User {
-    String userId;
-    String name;
-    String email;
-    String loginTime;
-    String logoutTime;
+    private String userId;
+    private String name;
+    private String email;
+    private String loginTime;
+    private String logoutTime;
+    private String address;
+    private String phone;
+    private String image;
 
     public User() {
         this.userId = "";
@@ -20,6 +23,31 @@ public class User {
         this.email = email;
         this.loginTime = "";
         this.logoutTime = "";
+        this.address="";
+        this.phone="";
+        this.image="";
+    }
+
+    public User(String userId, String name, String email, String image) {
+        this.userId = userId;
+        this.name = name;
+        this.email = email;
+        this.loginTime = "";
+        this.logoutTime = "";
+        this.address="";
+        this.phone="";
+        this.image=image;
+    }
+
+    public User(String userId, String name, String email, String address, String phone, String image) {
+        this.userId = userId;
+        this.name = name;
+        this.email = email;
+        this.loginTime = "";
+        this.logoutTime = "";
+        this.address=address;
+        this.phone=phone;
+        this.image=image;
     }
 
     public String getUserId() {
@@ -60,5 +88,29 @@ public class User {
 
     public void setLogoutTime(String logoutTime) {
         this.logoutTime = logoutTime;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
     }
 }

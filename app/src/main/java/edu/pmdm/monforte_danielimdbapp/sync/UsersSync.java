@@ -36,7 +36,10 @@ public class UsersSync {
                     String userId = userDocument.getString("userId");
                     String userName = userDocument.getString("name");
                     String userEmail = userDocument.getString("email");
-                    if(!dbHelper.userExists(userId)) dbHelper.addUser(new User(userId,userName,userEmail));
+                    String userAddress=userDocument.getString("address");
+                    String userPhone=userDocument.getString("phone");
+                    String userImage = userDocument.getString("image");
+                    if(!dbHelper.userExists(userId)) dbHelper.addUser(new User(userId,userName,userEmail,userAddress,userPhone,userImage));
                 }
             }
         });
@@ -51,6 +54,9 @@ public class UsersSync {
         userMap.put("userId", user.getUserId());
         userMap.put("name", user.getName());
         userMap.put("email", user.getEmail());
+        userMap.put("address",user.getAddress());
+        userMap.put("phone",user.getPhone());
+        userMap.put("image", user.getImage());
         userDocument.set(userMap);
     }
 
