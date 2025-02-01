@@ -45,4 +45,8 @@
     <string name="guardar">GUARDAR</string>
     <string name="address_placeholder">Address</string>
     <string name="phone_placeholder">Phone</string>
+
+    <string name="buscar_direccion">BUSCAR DIRECCION</string>
+    <string name="confirmar_direccion">CONFIRMAR DIRECCION</string>
+    <string name="google_maps_key">AIzaSyAER7D-uvYpBOG3wZjz9z3AeGulqAci-OU</string>
 </resources>

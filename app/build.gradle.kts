@@ -62,4 +62,6 @@ dependencies {
     implementation (libs.facebook.login)
     implementation (libs.ccp)
     implementation (libs.libphonenumber)
+    implementation(libs.play.services.maps)
+    implementation (libs.places)
 }

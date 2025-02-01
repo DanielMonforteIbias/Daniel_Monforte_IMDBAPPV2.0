@@ -24,6 +24,7 @@ import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
 import com.facebook.FacebookSdk;
 import com.facebook.GraphRequest;
+import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
 import com.google.android.gms.auth.api.identity.BeginSignInRequest;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -265,6 +266,7 @@ public class LoginActivity extends AppCompatActivity {
                             System.out.println("signInWithCredential:failure" + task.getException());
                             if (task.getException() instanceof FirebaseAuthUserCollisionException) {
                                 Toast.makeText(getApplicationContext(), "Este correo ya se ha usado con otro proveedor", Toast.LENGTH_SHORT).show();
+                                if (AccessToken.getCurrentAccessToken() != null) LoginManager.getInstance().logOut();
                             }
                             else Toast.makeText(getApplicationContext(), "Authentication failed.", Toast.LENGTH_SHORT).show();
                         }

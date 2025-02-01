@@ -4,8 +4,11 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Base64;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Menu;
@@ -224,8 +227,15 @@ public class MainActivity extends AppCompatActivity {
                     request.executeAsync();
                 }
             }
-
         } else txtEmail.setText(user.getEmail());
-        Glide.with(this).load(user.getImage()).placeholder(R.drawable.usuario).into(imgFoto); //Usamos Glide para poner la foto del usuario en el ImageView. Si ocurriese algun problema y fuese null, se pondría la foto del placeholder
+        String image=user.getImage();
+        if (image.startsWith("http://") || image.startsWith("https://") || image.startsWith("content://") || image.startsWith("file://")){ //Si la imagen es de una URL o una URI, usamos Glide
+            Glide.with(this).load(image).placeholder(R.drawable.usuario).into(imgFoto); //Usamos Glide para poner la foto del usuario en el ImageView. Si ocurriese algun problema y fuese null, se pondría la foto del placeholder
+        }
+        else {//Si no, es un String en Base64 (viene de la camara), asi que haremos un bitmap y despues usaremos Glide
+            byte[] decodedString = Base64.decode(user.getImage(), Base64.DEFAULT);
+            Bitmap bitmap= BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+            Glide.with(this).load(bitmap).placeholder(R.drawable.usuario).into(imgFoto);
+        }
     }
 }
