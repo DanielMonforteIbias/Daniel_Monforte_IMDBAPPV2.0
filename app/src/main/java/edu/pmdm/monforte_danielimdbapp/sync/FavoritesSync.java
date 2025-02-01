@@ -1,11 +1,18 @@
 package edu.pmdm.monforte_danielimdbapp.sync;
 
 import android.content.Context;
+import android.util.Log;
 
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.SetOptions;
+import com.google.firebase.firestore.Source;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +38,7 @@ public class FavoritesSync {
             DocumentReference userDocument = db.collection("favorites").document(user); //La colección de favoritos tendrá un documento para cada usuario, con su id como nombre
             List<Movie> userFavorites = dbHelper.getUserFavorites(user); //Obtenemos los favoritos de ese usuario
             CollectionReference moviesCollection = userDocument.collection("movies"); //El documento del usuario tendra una coleccion de peliculas donde guardaremos sus favoritas
+            userDocument.set(Collections.singletonMap("exists", true), SetOptions.merge()); //Nos aseguramos de que el documento tenga un parametro para que Firebase lo considere completo y el documento exista
             for (Movie movie : userFavorites) { //Recorremos las peliculas favoritas del usuario
                 String insertionTime = dbHelper.getInsertionTimeFavoriteMovie(user, movie.getId()); //Obtenemos la hora de insercion, que no es un atributo de la pelicula en sí
                 Map<String, Object> movieMap = new HashMap<>(); //Creamos un mapa para poner los datos
@@ -48,6 +56,35 @@ public class FavoritesSync {
     }
 
     /**
+     * Método que sincroniza toda la base de datos de favoritos de Firebase con la local
+     */
+    public void syncFavoritesFromFirebase(){
+        db.collection("favorites").get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+            @Override
+            public void onSuccess(QuerySnapshot userDocumentSnapshots) {
+                for (DocumentSnapshot userDocument : userDocumentSnapshots.getDocuments()) {
+                    String userId = userDocument.getId();
+                    db.collection("favorites").document(userId).collection("movies").get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                        @Override
+                        public void onSuccess(QuerySnapshot movieDocumentSnapshots) {
+                            for (DocumentSnapshot movieDocument : movieDocumentSnapshots.getDocuments()) {
+                                String movieId = movieDocument.getString("movieId");
+                                String movieTitle = movieDocument.getString("movieTitle");
+                                String movieImage = movieDocument.getString("movieImage");
+                                String movieDate = movieDocument.getString("movieDate");
+                                double movieRating = movieDocument.getDouble("movieRating");
+                                String insertionTime = movieDocument.getString("insertionTime");
+                                if(!dbHelper.movieExists(movieId)) dbHelper.addMovie(new Movie(movieId,movieTitle,movieImage,movieDate,movieRating));
+                                if(!dbHelper.movieIsFavorite(userId,movieId))dbHelper.addFavorite(userId,movieId,insertionTime);
+                            }
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    /**
      * Este método sincroniza una película añadida a favoritos por un usuario para que se añada tambien en Firebase
      * @param userId el id del usuario que añadio la pelicula a favoritos
      * @param movieId el id de la película añadida a favoritos
@@ -56,6 +93,7 @@ public class FavoritesSync {
         DocumentReference userDocument = db.collection("favorites").document(userId); //Obtenemos el documento del usuario
         List<Movie> userFavorites = dbHelper.getUserFavorites(userId); //Obtenemos los favoritos del usuario
         CollectionReference moviesCollection = userDocument.collection("movies"); //Obtenemos la coleccion de peliculas favoritas del usuario
+        userDocument.set(Collections.singletonMap("exists", true), SetOptions.merge()); //Nos aseguramos de que el documento tenga un parametro para que Firebase lo considere completo y el documento exista
         for (Movie movie : userFavorites) {
             if(movie.getId().equals(movieId)){ //Sincronizamos solo la película añadida nueva
                 String insertionTime = dbHelper.getInsertionTimeFavoriteMovie(userId, movie.getId());

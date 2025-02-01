@@ -8,10 +8,16 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import androidx.annotation.Nullable;
 
+import com.google.firebase.auth.FirebaseUser;
+
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import edu.pmdm.monforte_danielimdbapp.models.Movie;
+import edu.pmdm.monforte_danielimdbapp.models.User;
 import edu.pmdm.monforte_danielimdbapp.sync.FavoritesSync;
 
 public class FavoritesDatabaseHelper extends SQLiteOpenHelper {
@@ -19,11 +25,15 @@ public class FavoritesDatabaseHelper extends SQLiteOpenHelper {
     private SQLiteDatabase database; //Variable para operar en la base de datos
     private final String MOVIES_TABLE_NAME="MOVIES"; //Nombre de la tabla de peliculas
     private final String FAVORITES_TABLE_NAME="FAVORITES"; //Nombre de la tabla de favoritos
+    private final String USERS_TABLE_NAME="USERS";
+
     //Version 1: MOVIES(id,title,image) FAVORITES(userId,movieId)
     //Version 2: Añade la columna insertionTime a FAVORITES
     //Version 3: Añade la columna movieDate a MOVIES
     //Version 4: Añade la columna movieRating a MOVIES
-    private static int databaseVersion=4; //Version actual de la base de datos
+    //Version 5: Crear la tabla USERS
+    //Version 6: Restriccion FK userId en FAVORITES y campos en USERS
+    private static int databaseVersion=6; //Version actual de la base de datos
 
     private ContentValues values; //Variable usada para el contenido de las inserciones
     private Context context;
@@ -40,8 +50,11 @@ public class FavoritesDatabaseHelper extends SQLiteOpenHelper {
         String createTableMovies="CREATE TABLE "+MOVIES_TABLE_NAME+" (movieId TEXT PRIMARY KEY, movieTitle TEXT NOT NULL, movieImage TEXT, movieDate TEXT, movieRating REAL)";
         db.execSQL(createTableMovies);
         //Query para crear la tabla de favoritos
-        String createTableFavorites="CREATE TABLE "+FAVORITES_TABLE_NAME+" (userId TEXT NOT NULL, movieId TEXT NOT NULL, insertionTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(userId, movieId), FOREIGN KEY(movieId) REFERENCES MOVIES(movieId))";
+        String createTableFavorites="CREATE TABLE "+FAVORITES_TABLE_NAME+" (userId TEXT NOT NULL, movieId TEXT NOT NULL, insertionTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(userId, movieId), FOREIGN KEY(movieId) REFERENCES MOVIES(movieId), FOREIGN KEY(userId) REFERENCES USERS(userId))";
         db.execSQL(createTableFavorites);
+        //Query para crear la tabla de usuarios
+        String createTableUsers="CREATE TABLE "+USERS_TABLE_NAME+" (userId TEXT PRIMARY KEY, name TEXT, email TEXT NOT NULL, loginTime TIMESTAMP, logoutTime TIMESTAMP, address, phone TEXT, image TEXT)";
+        db.execSQL(createTableUsers);
     }
 
     @Override
@@ -49,6 +62,12 @@ public class FavoritesDatabaseHelper extends SQLiteOpenHelper {
         if (oldVersion < 2) db.execSQL("ALTER TABLE " + FAVORITES_TABLE_NAME + " ADD COLUMN insertionTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP"); //Si antes estabamos debajo de la version 2, añadimos la columna insertionTime a FAVORITES
         if (oldVersion < 3) db.execSQL("ALTER TABLE " + MOVIES_TABLE_NAME + " ADD COLUMN movieDate TEXT DEFAULT ''"); //Si antes estabamos debajo de la version 3, añadimos la columna movieDate a MOVIES
         if(oldVersion<4)db.execSQL("ALTER TABLE " + MOVIES_TABLE_NAME + " ADD COLUMN movieRating REAL DEFAULT 0"); //Si antes estabamos debajo de la version 4, añadimos la columna movieRating a MOVIES
+        if(oldVersion<5)db.execSQL("CREATE TABLE "+USERS_TABLE_NAME+" (userId TEXT PRIMARY KEY, name TEXT, email TEXT NOT NULL, loginTime TIMESTAMP, logoutTime TIMESTAMP)");
+        if(oldVersion<6){
+            db.execSQL("ALTER TABLE "+USERS_TABLE_NAME+" ADD COLUMN address TEXT");
+            db.execSQL("ALTER TABLE "+USERS_TABLE_NAME+" ADD COLUMN phone TEXT");
+            db.execSQL("ALTER TABLE "+USERS_TABLE_NAME+" ADD COLUMN image TEXT");
+        }
     }
 
     /**
@@ -81,11 +100,12 @@ public class FavoritesDatabaseHelper extends SQLiteOpenHelper {
      * @param userId el id del usuario
      * @param movieId el id de la película
      */
-    public void addFavorite(String userId, String movieId){
+    public void addFavorite(String userId, String movieId, String insertionTime){
         values = new ContentValues(); //Inicializamos la variable values para guardar en ella a continuación los valores a insertar
         //Ponemos los ids, usando como key los nombres de las columnas en la tabla
         values.put("userId", userId);
         values.put("movieId", movieId);
+        if(insertionTime!=null) values.put("insertionTime",insertionTime); //Si el tiempo no es nulo, lo  añadimos. Si lo es, la base de datos se encargara de poner el actual
         database.insert(FAVORITES_TABLE_NAME,null,values); //Insertamos el registro en FAVORITES
         new FavoritesSync(context).addFavoriteToFirebase(userId,movieId);
     }
@@ -194,5 +214,95 @@ public class FavoritesDatabaseHelper extends SQLiteOpenHelper {
         Cursor cursor = database.rawQuery("SELECT insertionTime FROM "+FAVORITES_TABLE_NAME+" WHERE userId=? AND movieId=?",new String[]{userId,movieId});
         if(cursor.moveToFirst()) insertionTime=cursor.getString(0);
         return insertionTime;
+    }
+
+    public void addUser(User user){
+        values = new ContentValues();
+        values.put("userId",user.getUserId());
+        values.put("name",user.getName());
+        values.put("email",user.getEmail());
+        values.put("loginTime", (String) null);
+        values.put("logoutTime", (String) null);
+        values.put("address",user.getAddress());
+        values.put("phone",user.getPhone());
+        values.put("image",user.getImage());
+        database.insert(USERS_TABLE_NAME,null,values);
+    }
+
+    public boolean userExists(String userId){
+        Cursor cursor = database.rawQuery("SELECT COUNT(*) FROM " + USERS_TABLE_NAME + " WHERE userId = ?", new String[]{userId});
+        boolean exists = false; //Declaramos la variable existe y la inicializamos a false. Esta variable será la que devolvamos al final
+        if(cursor.moveToFirst()) { //Si hay resultado en la consulta
+            int count=cursor.getInt(0); //Obtenemos el primer dato que hay (solo habrá uno ya que es un count)
+            if(count>0) exists=true; //Si el valor es mayor que 0, es que la película existe, así que ponemos la variable a true
+        }
+        cursor.close(); //Cerramos el cursor
+        return exists; //Devolvemos si existe o no
+    }
+
+    public void updateUserLoginTime(String userId, long loginTime){
+        values=new ContentValues();
+        values.put("loginTime",getTimestamp(loginTime));
+        String where="userId=?";
+        database.update(USERS_TABLE_NAME,values,where,new String[]{userId});
+    }
+
+    public void updateUserLogoutTime(String userId, long logoutTime){
+        values=new ContentValues();
+        values.put("logoutTime",getTimestamp(logoutTime));
+        String where="userId=?";
+        database.update(USERS_TABLE_NAME,values,where,new String[]{userId});
+    }
+
+    public String getTimestamp(long time) {
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+        Date date = new Date(time);
+        return format.format(date);
+    }
+
+    public List<User> getUsers(){
+        List<User>users=new ArrayList<User>();
+        Cursor cursor=database.rawQuery("SELECT userId, name, email FROM "+USERS_TABLE_NAME,null);
+        while(cursor.moveToNext()){
+            String userId=cursor.getString(0);
+            String name=cursor.getString(1);
+            String email=cursor.getString(2);
+            users.add(new User(userId,name,email));
+        }
+        return users;
+    }
+
+    public User getUser(String userId){
+        User user=new User();
+        Cursor cursor=database.rawQuery("SELECT * FROM "+USERS_TABLE_NAME+" WHERE userId=?",new String[]{userId});
+        if(cursor.moveToNext()){
+            user.setUserId(cursor.getString(0));
+            user.setName(cursor.getString(1));
+            user.setEmail(cursor.getString(2));
+            user.setLoginTime(cursor.getString(3));
+            user.setLogoutTime(cursor.getString(4));
+            user.setAddress(cursor.getString(5));
+            user.setPhone(cursor.getString(6));
+            user.setImage(cursor.getString(7));
+        }
+        return user;
+    }
+
+    public void updateUser(User user){
+        values = new ContentValues(); //Inicializamos la variable values para guardar en ella a continuación los valores a insertar
+        //Ponemos los datos a insertar, usando como key el nombre de la columna
+        values.put("name", user.getName());
+        values.put("address", user.getAddress());
+        values.put("phone",user.getPhone());
+        values.put("image",user.getImage());
+        String where="userId=?";
+        database.update(USERS_TABLE_NAME,values,where,new String[]{user.getUserId()});
+    }
+    public void updateUserImage(String userId, String image){
+        values = new ContentValues(); //Inicializamos la variable values para guardar en ella a continuación los valores a insertar
+        //Ponemos los datos a insertar, usando como key el nombre de la columna
+        values.put("image", image);
+        String where="userId=?";
+        database.update(USERS_TABLE_NAME,values,where,new String[]{userId});
     }
 }

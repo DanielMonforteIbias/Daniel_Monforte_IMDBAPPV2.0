@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "edu.pmdm.monforte_danielimdbapp"
-        minSdk = 23
+        minSdk = 26
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -60,4 +60,8 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
     implementation (libs.facebook.login)
+    implementation (libs.ccp)
+    implementation (libs.libphonenumber)
+    implementation(libs.play.services.maps)
+    implementation (libs.places)
 }
