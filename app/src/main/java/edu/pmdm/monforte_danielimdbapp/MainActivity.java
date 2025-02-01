@@ -1,5 +1,6 @@
 package edu.pmdm.monforte_danielimdbapp;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -26,6 +27,10 @@ import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
@@ -57,6 +62,8 @@ public class MainActivity extends AppCompatActivity {
     private GoogleSignInClient gClient;
     private GoogleSignInOptions gOptions;
 
+    private ActivityResultLauncher<Intent> editUserActivityLauncher;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -84,37 +91,12 @@ public class MainActivity extends AppCompatActivity {
         imgFoto = headerView.findViewById(R.id.imgViewFoto);
         firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         providerId = firebaseUser.getProviderData().get(1).getProviderId();
-        User user = dbHelper.getUser(firebaseUser.getUid());
-        //Dependiendo del proveedor obtendremos los datos de una u otra forma
         if (providerId.equals("google.com")) { //Si el proveedor es Google
             gOptions = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).requestEmail().build();
             gClient = GoogleSignIn.getClient(this, gOptions);
         }
 
-        txtNombre.setText(user.getName());
-        if (providerId.equals("facebook.com")) {
-            txtEmail.setText("Conectado con Facebook");
-            if (user.getImage() == null || user.getImage().isEmpty()){ //Ponemos la foto de Facebook si el usuario no tiene foto en local
-                AccessToken accessToken = AccessToken.getCurrentAccessToken();
-                if (accessToken != null) {
-                    GraphRequest request = GraphRequest.newMeRequest(accessToken, (object, response) -> {
-                        try {
-                            String photoUrl = object.getJSONObject("picture").getJSONObject("data").getString("url");
-                            dbHelper.updateUserImage(firebaseUser.getUid(), photoUrl);
-                            Glide.with(this).load(photoUrl).placeholder(R.drawable.usuario).into(imgFoto); //Actualizamos la foto de la interfaz
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    });
-                    Bundle parameters = new Bundle();
-                    parameters.putString("fields", "id,name,picture.type(large)");
-                    request.setParameters(parameters);
-                    request.executeAsync();
-                }
-            }
-
-        } else txtEmail.setText(user.getEmail());
-        Glide.with(this).load(user.getImage()).placeholder(R.drawable.usuario).into(imgFoto); //Usamos Glide para poner la foto del usuario en el ImageView. Si ocurriese algun problema y fuese null, se pondría la foto del placeholder
+        updateUserUI();
 
         //OnClick del botón para cerrar sesión
         btnLogout.setOnClickListener(new View.OnClickListener() {
@@ -149,6 +131,16 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(new Intent(MainActivity.this, LoginActivity.class)); //Abrimos la actividad de LoginActivity
             }
         });
+
+        editUserActivityLauncher = registerForActivityResult( //Cuando termine la actividad de editar usuario
+                new ActivityResultContracts.StartActivityForResult(), new ActivityResultCallback<ActivityResult>() {
+                    @Override
+                    public void onActivityResult(ActivityResult result) {
+                        if (result.getResultCode() == Activity.RESULT_OK) {
+                            updateUserUI(); //Actualizamos los datos del usuario
+                        }
+                    }
+                });
     }
 
     /**
@@ -177,7 +169,7 @@ public class MainActivity extends AppCompatActivity {
         } else if (id == R.id.action_edit_user) {
             Intent intent = new Intent(getApplicationContext(), EditUserActivity.class);
             intent.putExtra("userId", firebaseUser.getUid());
-            startActivity(intent);
+            editUserActivityLauncher.launch(intent);
         }
         return super.onOptionsItemSelected(item);
     }
@@ -204,5 +196,36 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         dialogo.show(); //Mostramos el diálogo
+    }
+
+    public void updateUserUI(){
+        //Dependiendo del proveedor obtendremos los datos de una u otra forma
+        User user = dbHelper.getUser(firebaseUser.getUid());
+        txtNombre.setText(user.getName());
+        if (providerId.equals("facebook.com")) {
+            txtEmail.setText("Conectado con Facebook");
+            if (user.getImage() == null || user.getImage().isEmpty()){ //Ponemos la foto de Facebook si el usuario no tiene foto en local
+                AccessToken accessToken = AccessToken.getCurrentAccessToken();
+                if (accessToken != null) {
+                    GraphRequest request = GraphRequest.newMeRequest(accessToken, (object, response) -> {
+                        try {
+                            String photoUrl = object.getJSONObject("picture").getJSONObject("data").getString("url");
+                            dbHelper.updateUserImage(firebaseUser.getUid(), photoUrl);
+                            user.setImage(photoUrl);
+                            usersSync.updateUserInFirebase(user);
+                            Glide.with(this).load(photoUrl).placeholder(R.drawable.usuario).into(imgFoto); //Actualizamos la foto de la interfaz
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    });
+                    Bundle parameters = new Bundle();
+                    parameters.putString("fields", "id,name,picture.type(large)");
+                    request.setParameters(parameters);
+                    request.executeAsync();
+                }
+            }
+
+        } else txtEmail.setText(user.getEmail());
+        Glide.with(this).load(user.getImage()).placeholder(R.drawable.usuario).into(imgFoto); //Usamos Glide para poner la foto del usuario en el ImageView. Si ocurriese algun problema y fuese null, se pondría la foto del placeholder
     }
 }

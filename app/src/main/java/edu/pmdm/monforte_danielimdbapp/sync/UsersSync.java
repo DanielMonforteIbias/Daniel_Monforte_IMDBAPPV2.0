@@ -60,6 +60,19 @@ public class UsersSync {
         userDocument.set(userMap);
     }
 
+    /**
+     * Método que actualiza los datos de un usuario en la base de datos de Firebase
+     */
+    public void updateUserInFirebase(User user) {
+        DocumentReference userDocument = db.collection("users").document(user.getUserId());
+        Map<String, Object> userMap = new HashMap<>();
+        userMap.put("name", user.getName());
+        userMap.put("address", user.getAddress());
+        userMap.put("phone", user.getPhone());
+        userMap.put("image", user.getImage());
+        userDocument.update(userMap);
+    }
+
     public void addActivityLogToUser(String userId) {
         DocumentReference userDocument = db.collection("users").document(userId);
         Map<String, String> newLog = new HashMap<>();
