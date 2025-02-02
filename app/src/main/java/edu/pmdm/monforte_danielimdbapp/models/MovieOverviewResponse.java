@@ -1,5 +1,7 @@
 package edu.pmdm.monforte_danielimdbapp.models;
 
+import android.util.Log;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -51,6 +53,7 @@ public class MovieOverviewResponse {
                 } else if(response.code()==429){ //429 es el codigo de error cuando una API no tiene calls
                     System.out.println("Limite de solicitudes alcanzado, cambiando la key");
                     IMDBApiClient.switchApiKey(); //Cambiamos la key
+                    Log.i("APIKEY","Api key nueva: "+IMDBApiClient.getApiKey()); //Informamos de la Key
                     obtenerDescripcion(id, service); //Volvemos a llamar al metodo con los mismos parametros que recibió una vez cambiada la key
                 }
                 else {

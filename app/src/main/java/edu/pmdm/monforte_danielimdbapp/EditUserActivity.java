@@ -2,6 +2,7 @@ package edu.pmdm.monforte_danielimdbapp;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -12,6 +13,7 @@ import android.provider.MediaStore;
 import android.util.Base64;
 import android.util.Pair;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -30,12 +32,17 @@ import com.google.i18n.phonenumbers.PhoneNumberUtil;
 import com.google.i18n.phonenumbers.Phonenumber;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.security.KeyPair;
 
 import edu.pmdm.monforte_danielimdbapp.database.FavoritesDatabaseHelper;
 import edu.pmdm.monforte_danielimdbapp.databinding.ActivityEditUserBinding;
 import edu.pmdm.monforte_danielimdbapp.models.User;
 import edu.pmdm.monforte_danielimdbapp.sync.UsersSync;
+import edu.pmdm.monforte_danielimdbapp.utils.AsyncTaskExecutorService;
 import edu.pmdm.monforte_danielimdbapp.utils.KeystoreManager;
 
 public class EditUserActivity extends AppCompatActivity {
@@ -121,7 +128,7 @@ public class EditUserActivity extends AppCompatActivity {
             public void onClick(View v) {
                 //Mostramos un dialogo para elegir las opciones de foto
                 AlertDialog.Builder builder = new AlertDialog.Builder(EditUserActivity.this);
-                builder.setTitle("Selecciona una opción")
+                builder.setTitle(R.string.select_image_option)
                         .setItems(new String[]{"Sacar foto", "Elegir desde galería", "Foto desde URL"}, (dialog, opcion) -> {
                             switch (opcion) {
                                 case 0:
@@ -134,6 +141,20 @@ public class EditUserActivity extends AppCompatActivity {
                                     selectImageActivityLauncher.launch(galleryIntent);
                                     break;
                                 case 2:
+                                    EditText editTextUrl = new EditText(EditUserActivity.this);
+                                    AlertDialog urlDialog = new AlertDialog.Builder(EditUserActivity.this)
+                                            .setTitle(R.string.introduce_image_url)
+                                            .setView(editTextUrl)
+                                            .setPositiveButton("Cargar", new DialogInterface.OnClickListener() {
+                                                @Override
+                                                public void onClick(DialogInterface dialog, int which) {
+                                                    String url = editTextUrl.getText().toString();
+                                                    new DownloadUrlImage().execute(url);
+                                                }
+                                            })
+                                            .setNegativeButton("Cancelar", null)
+                                            .create();
+                                    urlDialog.show();
                                     break;
                             }
                         })
@@ -251,5 +272,34 @@ public class EditUserActivity extends AppCompatActivity {
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream); // Comprimir como JPEG
         byte[] byteArray = byteArrayOutputStream.toByteArray();
         return Base64.encodeToString(byteArray, Base64.DEFAULT); // Convertir a base64
+    }
+
+    private class DownloadUrlImage extends AsyncTaskExecutorService<String, Void, Boolean> {
+        private String url;
+        @Override
+        protected Boolean doInBackground(String s) {
+            try {
+                url=s;
+                URL imageUrl = new URL(s);
+                HttpURLConnection connection = (HttpURLConnection) imageUrl.openConnection();
+                connection.setRequestMethod("HEAD");
+                connection.connect();
+                String contentType = connection.getContentType();
+                return contentType != null && contentType.startsWith("image/");
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(Boolean validUrl) {
+            if (validUrl) {
+                Glide.with(EditUserActivity.this).load(url).placeholder(R.drawable.usuario).into(binding.imgUsuario);
+                image = url;
+            } else {
+                Toast.makeText(EditUserActivity.this, "URL no válida o no es una imagen", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 }

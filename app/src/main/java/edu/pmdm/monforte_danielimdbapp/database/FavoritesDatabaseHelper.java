@@ -260,18 +260,6 @@ public class FavoritesDatabaseHelper extends SQLiteOpenHelper {
         return format.format(date);
     }
 
-    public List<User> getUsers(){
-        List<User>users=new ArrayList<User>();
-        Cursor cursor=database.rawQuery("SELECT userId, name, email FROM "+USERS_TABLE_NAME,null);
-        while(cursor.moveToNext()){
-            String userId=cursor.getString(0);
-            String name=cursor.getString(1);
-            String email=cursor.getString(2);
-            users.add(new User(userId,name,email));
-        }
-        return users;
-    }
-
     public User getUser(String userId){
         User user=new User();
         Cursor cursor=database.rawQuery("SELECT * FROM "+USERS_TABLE_NAME+" WHERE userId=?",new String[]{userId});
