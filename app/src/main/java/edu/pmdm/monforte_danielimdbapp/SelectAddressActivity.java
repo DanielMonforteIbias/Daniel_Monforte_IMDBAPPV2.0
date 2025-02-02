@@ -1,5 +1,6 @@
 package edu.pmdm.monforte_danielimdbapp;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.location.Address;
 import android.location.Geocoder;
@@ -9,6 +10,10 @@ import android.view.View;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
@@ -24,8 +29,10 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.Place;
+import com.google.android.libraries.places.widget.Autocomplete;
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment;
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener;
+import com.google.android.libraries.places.widget.model.AutocompleteActivityMode;
 
 import java.util.Arrays;
 import java.util.List;
@@ -38,48 +45,57 @@ public class SelectAddressActivity extends AppCompatActivity {
     private ActivitySelectAddressBinding binding;
 
     private String address;
-    private Geocoder geocoder;
     private SupportMapFragment mapFragment;
+
+    private ActivityResultLauncher<Intent> buscarDireccionLauncher;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         binding = ActivitySelectAddressBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-
-        Intent intent=getIntent();
-        address=intent.getStringExtra("address");
-        if(address!=null && !address.isEmpty()) new GetLatLngTask().execute(address);
-        if(!Places.isInitialized()) Places.initialize(getApplicationContext(), getString(R.string.google_maps_key));
-        AutocompleteSupportFragment autocompleteFragment = (AutocompleteSupportFragment) getSupportFragmentManager().findFragmentById(R.id.autocomplete_fragment);
-
-        autocompleteFragment.setPlaceFields(Arrays.asList(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG));
-
-        autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
-            @Override
-            public void onPlaceSelected(Place place) {
-                LatLng latLng = place.getLatLng();
-                if (latLng != null) {
-                    new GetAddressTask().execute(latLng);
-                    mostrarUbicacion(latLng);
-                }
-            }
-            @Override
-            public void onError(Status status) {
-                Toast.makeText(getApplicationContext(),"Error al obtener direccion",Toast.LENGTH_SHORT).show();
-            }
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
         });
+        buscarDireccionLauncher=registerForActivityResult( //Cuando termine la actividad de seleccionar direccion
+                new ActivityResultContracts.StartActivityForResult(), new ActivityResultCallback<ActivityResult>() {
+                    @Override
+                    public void onActivityResult(ActivityResult result) {
+                        if (result.getResultCode() == Activity.RESULT_OK) {
+                            Intent data = result.getData();
+                            Place place = Autocomplete.getPlaceFromIntent(data);
+                            mostrarUbicacion(new LatLng(place.getLatLng().latitude,place.getLatLng().longitude));
+                            address=place.getAddress();
+                            binding.textViewDireccion.setText(address);
+                        }
+                    }
+                });
+        Intent intentPlace = new Autocomplete.IntentBuilder(AutocompleteActivityMode.FULLSCREEN, Arrays.asList(Place.Field.ADDRESS, Place.Field.LAT_LNG, Place.Field.NAME)).build(SelectAddressActivity.this);
+        buscarDireccionLauncher.launch(intentPlace);
+        if(!Places.isInitialized()) Places.initialize(getApplicationContext(), getString(R.string.google_maps_key));
+
         mapFragment= (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
 
-        geocoder = new Geocoder(this, Locale.getDefault());
+        binding.btnBuscarDireccion.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intentPlace = new Autocomplete.IntentBuilder(AutocompleteActivityMode.FULLSCREEN, Arrays.asList(Place.Field.ADDRESS, Place.Field.LAT_LNG, Place.Field.NAME)).build(SelectAddressActivity.this);
+                buscarDireccionLauncher.launch(intentPlace);
+            }
+        });
 
         binding.btnConfirmarDireccion.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intentDireccion = new Intent(getApplicationContext(), EditUserActivity.class);
-                intentDireccion.putExtra("Address",address);
-                setResult(RESULT_OK,intentDireccion);
-                finish();
+                if(address!=null && !address.isEmpty()){
+                    Intent intentDireccion = new Intent(getApplicationContext(), EditUserActivity.class);
+                    intentDireccion.putExtra("Address",address);
+                    setResult(RESULT_OK,intentDireccion);
+                    finish();
+                }
+                else Toast.makeText(SelectAddressActivity.this,"Seleccione una direccion",Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -92,57 +108,5 @@ public class SelectAddressActivity extends AppCompatActivity {
                 googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
             }
         });
-    }
-
-    private class GetAddressTask extends AsyncTask<LatLng, Void, String> {
-        @Override
-        protected String doInBackground(LatLng... params) {
-            LatLng latLng = params[0];
-            try {
-                List<Address> addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1);
-                if (addresses != null && !addresses.isEmpty()) {
-                    Address address = addresses.get(0);
-                    String addressLine = address.getAddressLine(0);
-                    return addressLine;
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            if (result != null) {
-                address=result;
-                System.out.println(address);
-            }
-        }
-    }
-    private class GetLatLngTask extends AsyncTask<String, Void, LatLng> {
-        @Override
-        protected LatLng doInBackground(String... params) {
-            String addressString = params[0];
-            try {
-                List<Address> addresses = geocoder.getFromLocationName(addressString, 1); // Obtener la primera coincidencia
-                if (addresses != null && !addresses.isEmpty()) {
-                    Address address = addresses.get(0);
-                    double latitude = address.getLatitude();
-                    double longitude = address.getLongitude();
-                    return new LatLng(latitude, longitude); // Devolvemos LatLng
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(LatLng latLng) {
-            if (latLng != null) {
-                mostrarUbicacion(latLng);
-            }
-            else System.out.println("noooooo");
-        }
     }
 }

@@ -2,7 +2,11 @@ package edu.pmdm.monforte_danielimdbapp.sync;
 
 import android.content.Context;
 
+import androidx.annotation.NonNull;
+
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
@@ -71,6 +75,11 @@ public class UsersSync {
         userMap.put("phone", user.getPhone());
         userMap.put("image", user.getImage());
         userDocument.update(userMap);
+    }
+
+    public void userExistsInFirebase(String userId, OnCompleteListener<DocumentSnapshot> listener) {
+        DocumentReference userDocument = db.collection("users").document(userId);
+        userDocument.get().addOnCompleteListener(listener);
     }
 
     public void addActivityLogToUser(String userId) {

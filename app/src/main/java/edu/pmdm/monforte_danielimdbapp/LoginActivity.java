@@ -42,6 +42,7 @@ import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
 import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.firestore.DocumentSnapshot;
 
 import edu.pmdm.monforte_danielimdbapp.database.FavoritesDatabaseHelper;
 import edu.pmdm.monforte_danielimdbapp.databinding.ActivityLoginBinding;
@@ -279,11 +280,20 @@ public class LoginActivity extends AppCompatActivity {
         user = auth.getCurrentUser();
         if(!dbHelper.userExists(user.getUid())) { //Si el usuario no existe en la base de datos
             String image="";
-            if(provider.equals("google"))image=user.getPhotoUrl().toString();
+            if(provider.equals("google"))image=user.getPhotoUrl().toString(); //Si el proveedor es Google obtenemos su imagen con getPhotoUrl
             dbHelper.addUser(new User(user.getUid(),user.getDisplayName(),user.getEmail(),image)); //Lo añadimos a la local
-            usersSync.addUserToFirebase(new User(user.getUid(),user.getDisplayName(),user.getEmail(),image)); //Lo añadimos a Firebase
         }
-
+        usersSync.userExistsInFirebase(user.getUid(), new OnCompleteListener<DocumentSnapshot>() { //Comprobamos que existe en Firebase
+            @Override
+            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                if(task.isSuccessful()){
+                    DocumentSnapshot document = task.getResult();
+                    if (!document.exists()) { //Si no existe
+                        usersSync.addUserToFirebase(dbHelper.getUser(user.getUid())); //Lo añadimos a Firebase
+                    }
+                }
+            }
+        });
         dbHelper.updateUserLoginTime(user.getUid(),System.currentTimeMillis()); //Actualizamos la hora de login del usuario a ahora
         finish(); //Terminamos esta actividad
         Intent intent = new Intent(LoginActivity.this, MainActivity.class); //Creamos un Intent para ir a MainActivity

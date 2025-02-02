@@ -9,12 +9,30 @@
     android:orientation="vertical"
     tools:context=".SelectAddressActivity">
 
-    <fragment
-        android:id="@+id/autocomplete_fragment"
-        android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"
-        android:layout_width="match_parent"
-        android:layout_height="200dp" />
 
+    <LinearLayout
+        android:id="@+id/layoutDireccion"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="20dp"
+        android:padding="10dp"
+        android:background="@color/gray"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/textViewSeleccionarDireccion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Seleccionar direccion" />
+
+        <TextView
+            android:id="@+id/textViewDireccion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textColor="@color/black"
+            android:textSize="18sp" />
+    </LinearLayout>
     <Button
         android:id="@+id/btnBuscarDireccion"
         android:layout_width="wrap_content"
@@ -27,10 +45,12 @@
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="350dp" />
+
     <Button
         android:id="@+id/btnConfirmarDireccion"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="20dp"
         android:text="@string/confirmar_direccion" />
+
 </LinearLayout>
