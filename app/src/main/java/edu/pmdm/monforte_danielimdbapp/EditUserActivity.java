@@ -1,5 +1,6 @@
 package edu.pmdm.monforte_danielimdbapp;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -8,6 +9,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Base64;
@@ -51,6 +53,8 @@ public class EditUserActivity extends AppCompatActivity {
     private ActivityEditUserBinding binding;
 
     public final int PERMISO_UBICACION=1; //Constante para identificar el permiso de ubicacion
+    public final int PERMISO_CAMARA=2; //Constante para identificar el permiso de camara
+    public final int PERMISO_ALMACENAMIENTO=3; //Constante para identificar el permiso de almacenamiento
 
     private String image="";
 
@@ -132,13 +136,25 @@ public class EditUserActivity extends AppCompatActivity {
                         .setItems(new String[]{"Sacar foto", "Elegir desde galería", "Foto desde URL"}, (dialog, opcion) -> {
                             switch (opcion) {
                                 case 0:
-                                    Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE); //El intent abre la camara
-                                    selectImageActivityLauncher.launch(cameraIntent);
+                                    if(comprobarPermisosCamara()){
+                                        Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE); //El intent abre la camara
+                                        selectImageActivityLauncher.launch(cameraIntent);
+                                    }
+                                    else{
+                                        Toast.makeText(EditUserActivity.this,"Permisos de camara denegado",Toast.LENGTH_SHORT).show();
+                                        pedirPermisosCamara();
+                                    }
                                     break;
                                 case 1:
-                                    Intent galleryIntent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI); //El intent abre las fotos ya existentes
-                                    galleryIntent.setType("image/*");
-                                    selectImageActivityLauncher.launch(galleryIntent);
+                                    if(comprobarPermisosAlmacenamiento()){
+                                        Intent galleryIntent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI); //El intent abre las fotos ya existentes
+                                        galleryIntent.setType("image/*");
+                                        selectImageActivityLauncher.launch(galleryIntent);
+                                    }
+                                    else{
+                                        Toast.makeText(EditUserActivity.this,"Permisos de almacenamiento denegado",Toast.LENGTH_SHORT).show();
+                                        pedirPermisosAlmacenamiento();
+                                    }
                                     break;
                                 case 2:
                                     EditText editTextUrl = new EditText(EditUserActivity.this);
@@ -265,6 +281,44 @@ public class EditUserActivity extends AppCompatActivity {
      */
     private void pedirPermisosUbicacion() {
         ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.ACCESS_COARSE_LOCATION, android.Manifest.permission.ACCESS_FINE_LOCATION}, PERMISO_UBICACION);
+    }
+
+    /**
+     * Método que comprueba si tenemos permisos de camara o no
+     * @return true si tenemos permisos, false si no
+     */
+    private boolean comprobarPermisosCamara() {
+        return ActivityCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    /**
+     * Método que pide los permisos de camara al usuario
+     */
+    private void pedirPermisosCamara() {
+        ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.CAMERA}, PERMISO_CAMARA);
+    }
+
+    /**
+     * Método que comprueba si tenemos permisos de camara o no
+     * @return true si tenemos permisos, false si no
+     */
+    private boolean comprobarPermisosAlmacenamiento() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED;
+        } else {
+            return ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+        }
+    }
+
+    /**
+     * Método que pide los permisos de camara al usuario
+     */
+    private void pedirPermisosAlmacenamiento() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_MEDIA_IMAGES}, PERMISO_ALMACENAMIENTO);
+        } else {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, PERMISO_ALMACENAMIENTO);
+        }
     }
 
     private String convertBitmapToBase64(Bitmap bitmap) {
