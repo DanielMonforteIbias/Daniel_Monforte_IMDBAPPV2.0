@@ -215,10 +215,12 @@ public class EditUserActivity extends AppCompatActivity {
                     phone=KeystoreManager.encrypt(phone); //Lo encriptamos
                     user.setPhone(phone); //Se lo ponemos al usuario
                 }
+                else user.setPhone(""); //Si está vacio, lo quitamos poniendo una cadena vacia
                 if(!address.isEmpty()){ //Si el campo de direccion no esta vacio
                     address=KeystoreManager.encrypt(address); //Encriptamos la direccion
                     user.setAddress(address); //Se la ponemos al usuario
                 }
+                else user.setAddress(""); //Si está vacío, quitamos la dirección poniendo una cadena vacia
                 if(!image.isEmpty()) user.setImage(image); //Si la imagen no esta vacia, se la ponemos al usuario
 
 
