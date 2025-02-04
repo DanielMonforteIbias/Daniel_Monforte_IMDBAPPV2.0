@@ -31,23 +31,13 @@ public class AppLifecycleManager extends Application implements Application.Acti
     private final Runnable logoutRunnable=new Runnable() {
         @Override
         public void run() {
-            FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-            if (currentUser != null) {
-                registerUserLogout(currentUser);
-                editor.putBoolean(PREF_IS_LOGGED_IN,false);
-                editor.apply();
-            }
+            checkForPendingLogout();
         }
     };
     private final Runnable loginRunnable=new Runnable() {
         @Override
         public void run() {
-            FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-            if (currentUser != null) {
-                registerUserLogin(currentUser);
-                editor.putBoolean(PREF_IS_LOGGED_IN,true);
-                editor.apply();
-            }
+            checkForPendingLogin();
         }
     };
 
@@ -62,6 +52,15 @@ public class AppLifecycleManager extends Application implements Application.Acti
             FirebaseUser currentUser= FirebaseAuth.getInstance().getCurrentUser();
             registerUserLogout(currentUser);
             editor.putBoolean(PREF_IS_LOGGED_IN,false);
+            editor.apply();
+        }
+    }
+    private void checkForPendingLogin(){
+        boolean wasLoggedIn=preferences.getBoolean(PREF_IS_LOGGED_IN,false);
+        if(!wasLoggedIn){
+            FirebaseUser currentUser= FirebaseAuth.getInstance().getCurrentUser();
+            registerUserLogin(currentUser);
+            editor.putBoolean(PREF_IS_LOGGED_IN,true);
             editor.apply();
         }
     }
@@ -83,30 +82,31 @@ public class AppLifecycleManager extends Application implements Application.Acti
 
     @Override
     public void onActivityStarted(@NonNull Activity activity) {
-        if(!isActivityChangingConfigurations) activityReferences++;
+        if (!isActivityChangingConfigurations) {
+            if (activityReferences == 0) {
+                checkForPendingLogin();
+            }
+            activityReferences++;
+        }
     }
 
     @Override
     public void onActivityResumed(@NonNull Activity activity) {
         isInBackground=false;
-        handler.removeCallbacks(logoutRunnable);
-        handler.postDelayed(loginRunnable, DELAY);
-        editor.putBoolean(PREF_IS_LOGGED_IN,true);
-        editor.apply();
+        handler.removeCallbacks(loginRunnable);
     }
 
     @Override
     public void onActivityPaused(@NonNull Activity activity) {
         isInBackground=true;
-        handler.postDelayed(logoutRunnable, DELAY);
     }
 
     @Override
     public void onActivityStopped(@NonNull Activity activity) {
-        if(!isActivityChangingConfigurations){
+        if (!isActivityChangingConfigurations) {
             activityReferences--;
-            if(activityReferences==0){
-                isAppClosed=true;
+            if (activityReferences == 0) {
+                isAppClosed = true;
                 handler.postDelayed(logoutRunnable, DELAY);
             }
         }
@@ -124,25 +124,23 @@ public class AppLifecycleManager extends Application implements Application.Acti
 
     @Override
     public void onTrimMemory(int level) {
-        if(level==TRIM_MEMORY_UI_HIDDEN){
-            FirebaseUser user=FirebaseAuth.getInstance().getCurrentUser();
-            if(user!=null){
-                registerUserLogout(user);
-                editor.putBoolean(PREF_IS_LOGGED_IN,false);
-                editor.apply();
-            }
+        if (level == TRIM_MEMORY_UI_HIDDEN) {
+            checkForPendingLogout();
         }
         super.onTrimMemory(level);
     }
 
     private void registerUserLogout(FirebaseUser user){
         if(user==null) return;
-        dbHelper.updateUserLogoutTime(user.getUid(),System.currentTimeMillis());
-        sync.addActivityLogToUser(user.getUid());
+        long time=System.currentTimeMillis();
+        dbHelper.updateUserLogoutTime(user.getUid(),time);
+        sync.addActivityLogoutToUser(user.getUid(),time);
     }
 
     private void registerUserLogin(FirebaseUser user){
         if(user==null) return;
-        dbHelper.updateUserLoginTime(user.getUid(),System.currentTimeMillis());
+        long time=System.currentTimeMillis();
+        dbHelper.updateUserLoginTime(user.getUid(),time);
+        sync.addActivityLoginToUser(user.getUid(),time);
     }
 }

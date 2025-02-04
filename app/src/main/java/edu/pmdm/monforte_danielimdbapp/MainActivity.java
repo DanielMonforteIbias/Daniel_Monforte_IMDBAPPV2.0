@@ -6,7 +6,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.net.Uri;
 import android.os.Bundle;
 import android.util.Base64;
 import android.view.MenuItem;
@@ -106,7 +105,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 dbHelper.updateUserLogoutTime(firebaseUser.getUid(), System.currentTimeMillis());
-                usersSync.addActivityLogToUser(firebaseUser.getUid());
+                usersSync.addActivityLogoutToUser(firebaseUser.getUid(),System.currentTimeMillis());
                 FirebaseAuth.getInstance().signOut();
                 switch (providerId) { //Comprobamos el proveedor con el que habia sesion iniciada usando su id para cerrarla
                     case "google.com": //Si era Google

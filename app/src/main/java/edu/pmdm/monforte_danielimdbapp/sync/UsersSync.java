@@ -2,6 +2,7 @@ package edu.pmdm.monforte_danielimdbapp.sync;
 
 import android.content.Context;
 
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -9,11 +10,14 @@ import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import edu.pmdm.monforte_danielimdbapp.database.FavoritesDatabaseHelper;
-import edu.pmdm.monforte_danielimdbapp.models.Movie;
 import edu.pmdm.monforte_danielimdbapp.models.User;
 
 public class UsersSync {
@@ -73,13 +77,41 @@ public class UsersSync {
         userDocument.update(userMap);
     }
 
-    public void addActivityLogToUser(String userId) {
+    public void userExistsInFirebase(String userId, OnCompleteListener<DocumentSnapshot> listener) {
+        DocumentReference userDocument = db.collection("users").document(userId);
+        userDocument.get().addOnCompleteListener(listener);
+    }
+
+    public void addActivityLoginToUser(String userId, long loginTime) {
         DocumentReference userDocument = db.collection("users").document(userId);
         Map<String, String> newLog = new HashMap<>();
-        User user = dbHelper.getUser(userId);
-        //Guardamos en Firebase la ultima pareja de login-logout, que es la que hay en local
-        newLog.put("login_time", user.getLoginTime());
-        newLog.put("logout_time", user.getLogoutTime());
+        newLog.put("login_time",getTimestamp(loginTime));
+        newLog.put("logout_time", null);
         userDocument.update("activity_log", FieldValue.arrayUnion(newLog)); //Hacemos update para que se añada a los anteriores y no los reemplace
+    }
+    public void addActivityLogoutToUser(String userId, long logoutTime) {
+        DocumentReference userDocument = db.collection("users").document(userId);
+        userDocument.get().addOnSuccessListener(documentSnapshot -> {
+            if (documentSnapshot.exists()) {
+                List<Map<String, Object>> logs = (List<Map<String, Object>>) documentSnapshot.get("activity_log");
+                if (logs != null) {
+                    for (int i = logs.size() - 1; i >= 0; i--) {
+                        Map<String, Object> log = logs.get(i);
+                        if (log.get("logout_time") == null) {
+                            log.put("logout_time", getTimestamp(logoutTime));
+                            break;
+                        }
+                    }
+                    // Actualizar el historial de actividad en Firebase
+                    userDocument.update("activity_log", logs);
+                }
+            }
+        });
+    }
+
+    public String getTimestamp(long time) {
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+        Date date = new Date(time);
+        return format.format(date);
     }
 }

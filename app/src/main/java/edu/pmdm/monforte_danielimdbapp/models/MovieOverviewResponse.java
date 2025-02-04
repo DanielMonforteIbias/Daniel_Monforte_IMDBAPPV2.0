@@ -1,5 +1,7 @@
 package edu.pmdm.monforte_danielimdbapp.models;
 
+import android.util.Log;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -39,6 +41,7 @@ public class MovieOverviewResponse {
             public void onResponse(Call call, Response response) throws IOException {
                 if (response.isSuccessful()) {
                     try {
+                        Log.i("APIKEY","Api key usada: "+IMDBApiClient.getApiKey()); //Informamos de la Key
                         String jsonResponse = response.body().string(); //Obtenemos el JSON de la API en un String
                         JSONObject jsonObject = new JSONObject(jsonResponse); //Obtenemos un JSONObject del String recibido
                         String description = jsonObject.getJSONObject("data").getJSONObject("title").getJSONObject("plot").getJSONObject("plotText").getString("plainText"); //Obtenemos el texto del plot navegando por los JSONObject
@@ -51,7 +54,8 @@ public class MovieOverviewResponse {
                 } else if(response.code()==429){ //429 es el codigo de error cuando una API no tiene calls
                     System.out.println("Limite de solicitudes alcanzado, cambiando la key");
                     IMDBApiClient.switchApiKey(); //Cambiamos la key
-                    obtenerDescripcion(id, service); //Volvemos a llamar al metodo con los mismos parametros que recibió una vez cambiada la key
+                    Log.i("APIKEY","Api key nueva: "+IMDBApiClient.getApiKey()); //Informamos de la Key
+                    if(!apiKey.equals(IMDBApiClient.getApiKey()))obtenerDescripcion(id, service); //Volvemos a llamar al metodo con los mismos parametros que recibió una vez cambiada la key solo si se ha cambiado, es decir si la actual no coincide con la anterior
                 }
                 else {
                     if(service!=null){

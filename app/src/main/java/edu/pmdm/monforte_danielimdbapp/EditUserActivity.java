@@ -1,17 +1,21 @@
 package edu.pmdm.monforte_danielimdbapp;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Base64;
 import android.util.Pair;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -21,18 +25,26 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import com.bumptech.glide.Glide;
 import com.google.i18n.phonenumbers.PhoneNumberUtil;
 import com.google.i18n.phonenumbers.Phonenumber;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.security.KeyPair;
 
 import edu.pmdm.monforte_danielimdbapp.database.FavoritesDatabaseHelper;
 import edu.pmdm.monforte_danielimdbapp.databinding.ActivityEditUserBinding;
 import edu.pmdm.monforte_danielimdbapp.models.User;
 import edu.pmdm.monforte_danielimdbapp.sync.UsersSync;
+import edu.pmdm.monforte_danielimdbapp.utils.AsyncTaskExecutorService;
 import edu.pmdm.monforte_danielimdbapp.utils.KeystoreManager;
 
 public class EditUserActivity extends AppCompatActivity {
@@ -41,6 +53,8 @@ public class EditUserActivity extends AppCompatActivity {
     private ActivityEditUserBinding binding;
 
     public final int PERMISO_UBICACION=1; //Constante para identificar el permiso de ubicacion
+    public final int PERMISO_CAMARA=2; //Constante para identificar el permiso de camara
+    public final int PERMISO_ALMACENAMIENTO=3; //Constante para identificar el permiso de almacenamiento
 
     private String image="";
 
@@ -53,7 +67,11 @@ public class EditUserActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         binding = ActivityEditUserBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
         dbHelper=new FavoritesDatabaseHelper(this);
         userSync=new UsersSync(this);
         Intent intent=getIntent();
@@ -67,7 +85,6 @@ public class EditUserActivity extends AppCompatActivity {
             String userAddress=KeystoreManager.decrypt(user.getAddress());  //La desencriptamos
             binding.editTextAddress.setText(userAddress); //La ponemos en el EditText
         }
-        image=user.getImage();
         if(image!=null && !image.isEmpty()){ //Si el usuario tiene foto
             if (image.startsWith("http://") || image.startsWith("https://") || image.startsWith("content://") || image.startsWith("file://")){ //Si la imagen es de una URL o una URI, usamos Glide
                 Glide.with(this).load(image).placeholder(R.drawable.usuario).into(binding.imgUsuario); //Usamos Glide para poner la foto del usuario en el ImageView. Si ocurriese algun problema y fuese null, se pondría la foto del placeholder
@@ -114,19 +131,45 @@ public class EditUserActivity extends AppCompatActivity {
             public void onClick(View v) {
                 //Mostramos un dialogo para elegir las opciones de foto
                 AlertDialog.Builder builder = new AlertDialog.Builder(EditUserActivity.this);
-                builder.setTitle("Selecciona una opción")
+                builder.setTitle(R.string.select_image_option)
                         .setItems(new String[]{"Sacar foto", "Elegir desde galería", "Foto desde URL"}, (dialog, opcion) -> {
                             switch (opcion) {
                                 case 0:
-                                    Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE); //El intent abre la camara
-                                    selectImageActivityLauncher.launch(cameraIntent);
+                                    if(comprobarPermisosCamara()){
+                                        Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE); //El intent abre la camara
+                                        selectImageActivityLauncher.launch(cameraIntent);
+                                    }
+                                    else{
+                                        Toast.makeText(EditUserActivity.this,"Permisos de camara denegado",Toast.LENGTH_SHORT).show();
+                                        pedirPermisosCamara();
+                                    }
                                     break;
                                 case 1:
-                                    Intent galleryIntent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI); //El intent abre las fotos ya existentes
-                                    galleryIntent.setType("image/*");
-                                    selectImageActivityLauncher.launch(galleryIntent);
+                                    if(comprobarPermisosAlmacenamiento()){
+                                        Intent galleryIntent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI); //El intent abre las fotos ya existentes
+                                        galleryIntent.setType("image/*");
+                                        selectImageActivityLauncher.launch(galleryIntent);
+                                    }
+                                    else{
+                                        Toast.makeText(EditUserActivity.this,"Permisos de almacenamiento denegado",Toast.LENGTH_SHORT).show();
+                                        pedirPermisosAlmacenamiento();
+                                    }
                                     break;
                                 case 2:
+                                    EditText editTextUrl = new EditText(EditUserActivity.this);
+                                    AlertDialog urlDialog = new AlertDialog.Builder(EditUserActivity.this)
+                                            .setTitle(R.string.introduce_image_url)
+                                            .setView(editTextUrl)
+                                            .setPositiveButton("Cargar", new DialogInterface.OnClickListener() {
+                                                @Override
+                                                public void onClick(DialogInterface dialog, int which) {
+                                                    String url = editTextUrl.getText().toString();
+                                                    new DownloadUrlImage().execute(url);
+                                                }
+                                            })
+                                            .setNegativeButton("Cancelar", null)
+                                            .create();
+                                    urlDialog.show();
                                     break;
                             }
                         })
@@ -239,10 +282,77 @@ public class EditUserActivity extends AppCompatActivity {
         ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.ACCESS_COARSE_LOCATION, android.Manifest.permission.ACCESS_FINE_LOCATION}, PERMISO_UBICACION);
     }
 
+    /**
+     * Método que comprueba si tenemos permisos de camara o no
+     * @return true si tenemos permisos, false si no
+     */
+    private boolean comprobarPermisosCamara() {
+        return ActivityCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    /**
+     * Método que pide los permisos de camara al usuario
+     */
+    private void pedirPermisosCamara() {
+        ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.CAMERA}, PERMISO_CAMARA);
+    }
+
+    /**
+     * Método que comprueba si tenemos permisos de camara o no
+     * @return true si tenemos permisos, false si no
+     */
+    private boolean comprobarPermisosAlmacenamiento() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED;
+        } else {
+            return ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+        }
+    }
+
+    /**
+     * Método que pide los permisos de camara al usuario
+     */
+    private void pedirPermisosAlmacenamiento() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_MEDIA_IMAGES}, PERMISO_ALMACENAMIENTO);
+        } else {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, PERMISO_ALMACENAMIENTO);
+        }
+    }
+
     private String convertBitmapToBase64(Bitmap bitmap) {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream); // Comprimir como JPEG
         byte[] byteArray = byteArrayOutputStream.toByteArray();
         return Base64.encodeToString(byteArray, Base64.DEFAULT); // Convertir a base64
+    }
+
+    private class DownloadUrlImage extends AsyncTaskExecutorService<String, Void, Boolean> {
+        private String url;
+        @Override
+        protected Boolean doInBackground(String s) {
+            try {
+                url=s;
+                URL imageUrl = new URL(s);
+                HttpURLConnection connection = (HttpURLConnection) imageUrl.openConnection();
+                connection.setRequestMethod("HEAD");
+                connection.connect();
+                String contentType = connection.getContentType();
+                return contentType != null && contentType.startsWith("image/");
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(Boolean validUrl) {
+            if (validUrl) {
+                Glide.with(EditUserActivity.this).load(url).placeholder(R.drawable.usuario).into(binding.imgUsuario);
+                image = url;
+            } else {
+                Toast.makeText(EditUserActivity.this, "URL no válida o no es una imagen", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 }

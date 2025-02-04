@@ -45,6 +45,8 @@
     <string name="guardar">GUARDAR</string>
     <string name="address_placeholder">Address</string>
     <string name="phone_placeholder">Phone</string>
+    <string name="select_image_option">Selecciona una opcion</string>
+    <string name="introduce_image_url">Introduce la URL: </string>
 
     <string name="buscar_direccion">BUSCAR DIRECCION</string>
     <string name="confirmar_direccion">CONFIRMAR DIRECCION</string>

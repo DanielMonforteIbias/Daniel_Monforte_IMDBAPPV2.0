@@ -42,6 +42,7 @@ import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
 import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.firestore.DocumentSnapshot;
 
 import edu.pmdm.monforte_danielimdbapp.database.FavoritesDatabaseHelper;
 import edu.pmdm.monforte_danielimdbapp.databinding.ActivityLoginBinding;
@@ -67,15 +68,6 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        auth = FirebaseAuth.getInstance();
-        dbHelper =new FavoritesDatabaseHelper(this);
-        if (checkLoginStatus()) { //Si ya hay sesion iniciada
-            user=auth.getCurrentUser();
-            dbHelper.updateUserLoginTime(user.getUid(),System.currentTimeMillis()); //Actualizamos la hora de login del usuario a ahora
-            Intent intent = new Intent(this, MainActivity.class); //Abrimos un intent de MainActivity
-            startActivity(intent);
-            finish(); //Cerramos esta actividad
-        }
         EdgeToEdge.enable(this);
         binding = ActivityLoginBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -84,11 +76,34 @@ public class LoginActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        auth = FirebaseAuth.getInstance();
+        dbHelper =new FavoritesDatabaseHelper(this);
         usersSync=new UsersSync(this);
         usersSync.syncUsersFromFirebase();
         favoritesSync=new FavoritesSync(this);
         favoritesSync.syncFavoritesFromFirebase();
 
+        if (checkLoginStatus()) { //Si ya hay sesion iniciada
+            user=auth.getCurrentUser();
+            long loginTime=System.currentTimeMillis();
+            dbHelper.updateUserLoginTime(user.getUid(),loginTime); //Actualizamos la hora de login del usuario a ahora
+            usersSync.userExistsInFirebase(user.getUid(), new OnCompleteListener<DocumentSnapshot>() { //Comprobamos que existe en Firebase
+                @Override
+                public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                    if(task.isSuccessful()){
+                        DocumentSnapshot document = task.getResult();
+                        if (!document.exists()) { //Si no existe
+                            usersSync.addUserToFirebase(dbHelper.getUser(user.getUid())); //Lo añadimos a Firebase
+                        }
+                        usersSync.addActivityLoginToUser(user.getUid(),loginTime); //Le añadimos un login
+                    }
+                }
+            });
+            Intent intent = new Intent(this, MainActivity.class); //Abrimos un intent de MainActivity
+            startActivity(intent);
+            finish(); //Cerramos esta actividad
+        }
 
         //Sincronizar con Firebase
         signInRequest = BeginSignInRequest.builder()
@@ -277,14 +292,26 @@ public class LoginActivity extends AppCompatActivity {
 
     private void iniciarSesion(String provider){
         user = auth.getCurrentUser();
+        long loginTime=System.currentTimeMillis();
         if(!dbHelper.userExists(user.getUid())) { //Si el usuario no existe en la base de datos
             String image="";
-            if(provider.equals("google"))image=user.getPhotoUrl().toString();
+            if(provider.equals("google"))image=user.getPhotoUrl().toString(); //Si el proveedor es Google obtenemos su imagen con getPhotoUrl
             dbHelper.addUser(new User(user.getUid(),user.getDisplayName(),user.getEmail(),image)); //Lo añadimos a la local
-            usersSync.addUserToFirebase(new User(user.getUid(),user.getDisplayName(),user.getEmail(),image)); //Lo añadimos a Firebase
         }
+        usersSync.userExistsInFirebase(user.getUid(), new OnCompleteListener<DocumentSnapshot>() { //Comprobamos que existe en Firebase
+            @Override
+            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                if(task.isSuccessful()){
+                    DocumentSnapshot document = task.getResult();
+                    if (!document.exists()) { //Si no existe
+                        usersSync.addUserToFirebase(dbHelper.getUser(user.getUid())); //Lo añadimos a Firebase
+                    }
+                    usersSync.addActivityLoginToUser(user.getUid(),loginTime); //Le añadimos un login
+                }
+            }
+        });
 
-        dbHelper.updateUserLoginTime(user.getUid(),System.currentTimeMillis()); //Actualizamos la hora de login del usuario a ahora
+        dbHelper.updateUserLoginTime(user.getUid(),loginTime); //Actualizamos la hora de login del usuario a ahora
         finish(); //Terminamos esta actividad
         Intent intent = new Intent(LoginActivity.this, MainActivity.class); //Creamos un Intent para ir a MainActivity
         startActivity(intent); //Iniciamos la actividad con el intent
