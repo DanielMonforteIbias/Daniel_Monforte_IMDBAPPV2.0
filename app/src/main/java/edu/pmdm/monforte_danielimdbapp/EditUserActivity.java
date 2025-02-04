@@ -85,7 +85,6 @@ public class EditUserActivity extends AppCompatActivity {
             String userAddress=KeystoreManager.decrypt(user.getAddress());  //La desencriptamos
             binding.editTextAddress.setText(userAddress); //La ponemos en el EditText
         }
-        image=user.getImage();
         if(image!=null && !image.isEmpty()){ //Si el usuario tiene foto
             if (image.startsWith("http://") || image.startsWith("https://") || image.startsWith("content://") || image.startsWith("file://")){ //Si la imagen es de una URL o una URI, usamos Glide
                 Glide.with(this).load(image).placeholder(R.drawable.usuario).into(binding.imgUsuario); //Usamos Glide para poner la foto del usuario en el ImageView. Si ocurriese algun problema y fuese null, se pondría la foto del placeholder

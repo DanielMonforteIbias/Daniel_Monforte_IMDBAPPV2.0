@@ -45,6 +45,7 @@ public class MovieResponse {
             @Override
             public void onResponse(Call call, Response response) throws IOException { //Al recibir una respuesta de la API
                 if (response.isSuccessful()) { //Si la respuesta ha sido exitosa
+                    Log.i("APIKEY","Api key usada: "+IMDBApiClient.getApiKey()); //Informamos de la Key
                     String datos = response.body().string(); //Obtenemos el JSON en un String
                     List<Movie>movies= JSONExtractor.extractMovies(datos); //Extraemos los datos del JSON recibido con el metodo de MovieExtractor
                     if(service!=null){
@@ -54,7 +55,7 @@ public class MovieResponse {
                     System.out.println("Limite de solicitudes alcanzado, cambiando la key");
                     IMDBApiClient.switchApiKey(); //Cambiamos la key
                     Log.i("APIKEY","Api key nueva: "+IMDBApiClient.getApiKey()); //Informamos de la Key
-                    buscarTop10(service,context); //Volvemos a llamar al metodo con los mismos parametros que recibió una vez cambiada la key
+                    if(!apiKey.equals(IMDBApiClient.getApiKey()))buscarTop10(service,context); //Volvemos a llamar al metodo con los mismos parametros que recibió una vez cambiada la key, solo si se ha cambiado, es decir si la actual no coincide con la anterior
                 }
                 else { //Si la respuesta no ha sido exitosa
                     if(context!=null) new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(context, R.string.error_respuesta_api, Toast.LENGTH_SHORT).show()); //Mostramos un Toast con informacion del error. Se usa Handler para que se haga en el hilo principal

@@ -41,6 +41,7 @@ public class MovieOverviewResponse {
             public void onResponse(Call call, Response response) throws IOException {
                 if (response.isSuccessful()) {
                     try {
+                        Log.i("APIKEY","Api key usada: "+IMDBApiClient.getApiKey()); //Informamos de la Key
                         String jsonResponse = response.body().string(); //Obtenemos el JSON de la API en un String
                         JSONObject jsonObject = new JSONObject(jsonResponse); //Obtenemos un JSONObject del String recibido
                         String description = jsonObject.getJSONObject("data").getJSONObject("title").getJSONObject("plot").getJSONObject("plotText").getString("plainText"); //Obtenemos el texto del plot navegando por los JSONObject
@@ -54,7 +55,7 @@ public class MovieOverviewResponse {
                     System.out.println("Limite de solicitudes alcanzado, cambiando la key");
                     IMDBApiClient.switchApiKey(); //Cambiamos la key
                     Log.i("APIKEY","Api key nueva: "+IMDBApiClient.getApiKey()); //Informamos de la Key
-                    obtenerDescripcion(id, service); //Volvemos a llamar al metodo con los mismos parametros que recibió una vez cambiada la key
+                    if(!apiKey.equals(IMDBApiClient.getApiKey()))obtenerDescripcion(id, service); //Volvemos a llamar al metodo con los mismos parametros que recibió una vez cambiada la key solo si se ha cambiado, es decir si la actual no coincide con la anterior
                 }
                 else {
                     if(service!=null){
